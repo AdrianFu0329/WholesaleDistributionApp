@@ -18,7 +18,15 @@ namespace WholesaleDistributionApp.Controllers
             return View();
         }
 
-        public IActionResult Privacy()
+        public IActionResult Sample()
+        {
+            return View();
+        }        
+        public IActionResult Login()
+        {
+            return View();
+        } 
+        public IActionResult Register()
         {
             return View();
         }
