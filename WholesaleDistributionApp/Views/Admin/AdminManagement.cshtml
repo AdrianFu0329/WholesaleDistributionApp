@@ -1,6 +1,7 @@
 ﻿@{
-    ViewData["Title"] = "Sample Page";
+    ViewData["Title"] = "Admin Management";
 }
+
 <div class="pc-content">
     <!-- [ breadcrumb ] start -->
     <div class="page-header">
@@ -8,11 +9,11 @@
             <div class="row align-items-center">
                 <div class="col-md-12">
                     <div class="page-header-title">
-                        <h5 class="m-b-10">Sample Page</h5>
+                        <h5 class="m-b-10">Admin Management</h5>
                     </div>
                     <ul class="breadcrumb">
                         <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
-                        <li class="breadcrumb-item" aria-current="page">Sample Page</li>
+                        <li class="breadcrumb-item" aria-current="page">Admin Management</li>
                     </ul>
                 </div>
             </div>
@@ -21,42 +22,29 @@
     <!-- [ breadcrumb ] end -->
     <!-- [ Main Content ] start -->
     <div class="row">
-        <!-- [ sample-page ] start -->
         <div class="col-sm-12">
-            @*             <div class="card">
+            <div class="card">
                 <div class="card-header">
-                    <h5>Hello hamid handsome</h5>
+                    <h5 class="card-title">Admin List</h5>
                 </div>
                 <div class="card-body">
-                </div>
-            </div> *@
-
-                    <div class="card">
-                <div class="card-header">
-                    <h5>Admin List</h5>
-                </div>
-                        <div class="card-body">
-@*                             <button type="button" class="btn btn-primary btn-animation waves-effect waves-light" data-text="Add Employee" data-bs-toggle="modal" data-bs-target="#myModal"><span>Add Employee</span></button>
-                            <br>
-                            <br> *@
-                            <div class="table-responsive">
-                        <table id="employeeTable" class="table table-secondary table-striped align-middle table-nowrap mb-0">
-                                    <thead>
-                                        <tr>
-                                    <th scope="col">No</th>
+                    <div class="table-responsive">
+                        <table id="employeeTable" class="table table-bordered table-striped table-hover" style="width:100%">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th scope="col" style="width: 5%">No</th>
                                     <th scope="col">Name</th>
                                     <th scope="col">Email</th>
                                     <th scope="col">Phone Number</th>
-                                    <th scope="col">Role</th>
-                                        </tr>
-                                    </thead>
-                                </table>
-                            </div>
-                        </div>
-                    </div> <!-- end card -->
-
+                                    <th scope="col">Address</th>
+                                    <th scope="col">Action</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
-        <!-- [ sample-page ] end -->
     </div>
     <!-- [ Main Content ] end -->
 </div>
@@ -68,16 +56,23 @@
                 "processing": true,
                 "serverSide": true,
                 "ajax": {
-                    "url": "/Admin/AdminManagement/LoadData",
+                    "url": "/Admin/LoadData",
                     "type": "POST",
                     "dataType": "json"
                 },
                 "columns": [
+                    { "data": "no", "className": "text-center" },
                     { "data": "userName" },
                     { "data": "email" },
                     { "data": "phoneNumber" },
-                    { "data": "userRole" }
+                    { "data": "address" }
                 ],
+                "rowCallback": function (row, data, index) {
+                    $('td:eq(0)', row).html(index + 1);
+                },
+                "language": {
+                    "emptyTable": "No data available"
+                },
                 "error": function (xhr, error, thrown) {
                     alert('An error occurred while processing the data.');
                     console.error('XHR:', xhr);
