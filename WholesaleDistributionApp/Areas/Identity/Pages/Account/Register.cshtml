@@ -1,0 +1,75 @@
+﻿@page
+@model RegisterModel
+@{
+    Layout = "_Layout-without-nav";
+    ViewData["Title"] = "Sign Up";
+}
+
+<div class="auth-main">
+    <div class="auth-wrapper v3">
+        <div class="auth-form">
+            <div class="card mt-5">
+                <div class="card-body">
+                    <a class="d-flex justify-content-center mt-3" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                        <!-- ========   Change your logo from here   ============ -->
+                        <img src="~/assets/images/logo-dark.svg" alt="" class="logo logo-lg">
+                    </a>
+                    <div class="row">
+                        <div class="d-flex justify-content-center">
+                            <div class="auth-header">
+                                <h2 class="text-secondary mt-5"><b>Sign up</b></h2>
+                            </div>
+                        </div>
+                    </div>
+                    <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+                        <div class="form-floating mb-3">
+                            <input asp-for="Input.UserName" class="form-control" id="floatingInputUserName" placeholder="Username">
+                            <label asp-for="Input.UserName">Username</label>
+                            <span asp-validation-for="Input.UserName" class="text-danger"></span>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input asp-for="Input.Email" class="form-control" id="floatingInputEmail" placeholder="Email Address / Username" autocomplete="username">
+                            <label asp-for="Input.Email">Email Address</label>
+                            <span asp-validation-for="Input.Email" class="text-danger"></span>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input asp-for="Input.Password" type="password" class="form-control" id="floatingInputPassword" placeholder="Password" autocomplete="new-password">
+                            <label asp-for="Input.Password">Password</label>
+                            <span asp-validation-for="Input.Password" class="text-danger"></span>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input asp-for="Input.ConfirmPassword" type="password" class="form-control" id="floatingInputConfirmPassword" placeholder="Confirm Password" autocomplete="new-password">
+                            <label asp-for="Input.ConfirmPassword">Confirm Password</label>
+                            <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select asp-for="Input.Role" class="form-control" id="roleSelect" aria-required="true">
+                                <option value="" selected>Select an Account Type</option>
+                                <option value="Distributor">Distributor</option>
+                                <option value="Retailer">Retailer</option>
+                            </select>
+                            <label id="roleLabel" asp-for="Input.Role">Account Type</label>
+                            <span asp-validation-for="Input.Role" class="text-danger"></span>
+                        </div>
+                        <div class="form-check mt-3">
+                            <input class="form-check-input input-primary" type="checkbox" id="customCheckc1" checked>
+                            <label class="form-check-label" for="customCheckc1">
+                                <span class="h5 mb-0">Agree with <span>Terms & Condition.</span></span>
+                            </label>
+                        </div>
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-secondary p-2">Sign Up</button>
+                        </div>
+                    </form>
+                    <hr>
+                    <h5 class="d-flex justify-content-center">Already have an account?</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

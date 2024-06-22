@@ -1,0 +1,66 @@
+﻿@page
+@model LoginModel
+
+@{
+    Layout = "_Layout-without-nav";
+    ViewData["Title"] = "Sign In";
+}
+
+<div class="auth-main">
+    <div class="auth-wrapper v3">
+        <div class="auth-form">
+            <div class="card my-5">
+                <div class="card-body">
+                    <a class="d-flex justify-content-center mt-3" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                        <!-- ========   Change your logo from here   ============ -->
+                        <img src="~/assets/images/logo-dark.svg" alt="" class="logo logo-lg">
+                    </a>
+                    <div class="row">
+                        <div class="d-flex justify-content-center">
+                            <div class="auth-header">
+                                <h2 class="text-secondary mt-5"><b>Hi, Welcome Back</b></h2>
+                                <p class="f-16 mt-2">Enter your credentials to continue</p>
+                            </div>
+                        </div>
+                    </div>
+                    <h5 class="my-4 d-flex justify-content-center">Sign in with Username</h5>
+                    <form id="account" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+                        <div class="form-floating mb-3">
+                            <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                            <label asp-for="Input.Email" class="form-label">Username</label>
+                            <span asp-validation-for="Input.Email" class="text-danger"></span>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
+                            <label asp-for="Input.Password" class="form-label">Password</label>
+                            <span asp-validation-for="Input.Password" class="text-danger"></span>
+                        </div>
+                        <div class="d-flex mt-1 justify-content-between">
+                            <div class="form-check">
+                                <input class="form-check-input input-primary" asp-for="Input.RememberMe" />
+                                <label class="form-check-label text-muted" asp-for="Input.RememberMe">Remember me</label>
+                            </div>
+                            <h5 class="text-secondary"><a id="forgot-password" asp-page="./ForgotPassword">Forgot Password?</a></h5>
+                        </div>
+                        <div class="d-grid mt-4">
+                            <button id="login-submit" type="submit" class="btn btn-secondary">Sign In</button>
+                        </div>
+                    </form>
+                    <hr>
+                    <h5 class="d-flex justify-content-center">Don't have an account?</h5>
+                    <div class="d-flex justify-content-center">
+                        <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl" class="btn btn-outline-secondary">Register as a new user</a>
+                    </div>
+                    <div class="d-flex justify-content-center mt-3">
+                        <a id="resend-confirmation" asp-page="./ResendEmailConfirmation" class="text-secondary">Resend email confirmation</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
