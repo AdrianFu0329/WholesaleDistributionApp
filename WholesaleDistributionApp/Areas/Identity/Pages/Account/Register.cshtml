@@ -21,24 +21,12 @@
                             </div>
                         </div>
                     </div>
-                    <h5 class="my-4 d-flex justify-content-center">Sign Up with Email address</h5>
                     <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
                         <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-floating mb-3">
-                                    <input asp-for="Input.FirstName" class="form-control" id="floatingInputFirstName" placeholder="First Name">
-                                    <label asp-for="Input.FirstName">First Name</label>
-                                    <span asp-validation-for="Input.FirstName" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating mb-3">
-                                    <input asp-for="Input.LastName" class="form-control" id="floatingInputLastName" placeholder="Last Name">
-                                    <label asp-for="Input.LastName">Last Name</label>
-                                    <span asp-validation-for="Input.LastName" class="text-danger"></span>
-                                </div>
-                            </div>
+                        <div class="form-floating mb-3">
+                            <input asp-for="Input.UserName" class="form-control" id="floatingInputUserName" placeholder="Username">
+                            <label asp-for="Input.UserName">Username</label>
+                            <span asp-validation-for="Input.UserName" class="text-danger"></span>
                         </div>
                         <div class="form-floating mb-3">
                             <input asp-for="Input.Email" class="form-control" id="floatingInputEmail" placeholder="Email Address / Username" autocomplete="username">

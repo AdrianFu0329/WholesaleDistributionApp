@@ -63,12 +63,8 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
         public class InputModel
         {
             [Required]
-            [Display(Name = "First Name")]
-            public string FirstName { get; set; }
-
-            [Required]
-            [Display(Name = "Last Name")]
-            public string LastName { get; set; }
+            [Display(Name = "UserName")]
+            public string UserName { get; set; }
 
             [Required]
             [EmailAddress]
@@ -103,9 +99,16 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             if (ModelState.IsValid)
             {
+                var existingUser = await _userManager.FindByEmailAsync(Input.Email);
+
+                if (existingUser != null)
+                {
+                    ModelState.AddModelError(string.Empty, "Email already exists.");
+                    return Page();
+                }
                 var user = CreateUser();
 
-                await _userStore.SetUserNameAsync(user, $"{Input.FirstName}{Input.LastName}", CancellationToken.None);
+                await _userStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
 
                 var result = await _userManager.CreateAsync(user, Input.Password);
