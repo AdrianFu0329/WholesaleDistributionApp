@@ -69,31 +69,46 @@ namespace WholesaleDistributionApp.Controllers
                 // Sorting
                 if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortColumnDir))
                 {
-                    query = query.OrderBy(u => sortColumn == "userName" ? u.UserName :
-                                               sortColumn == "email" ? u.Email :
-                                               sortColumn == "phoneNumber" ? u.PhoneNumber :
-                                               sortColumn == "address" ? u.Address :
-                                               u.UserRole);
+                    switch (sortColumn)
+                    {
+                        case "userName":
+                            query = sortColumnDir == "asc" ? query.OrderBy(u => u.UserName) : query.OrderByDescending(u => u.UserName);
+                            break;
+                        case "email":
+                            query = sortColumnDir == "asc" ? query.OrderBy(u => u.Email) : query.OrderByDescending(u => u.Email);
+                            break;
+                        case "phoneNumber":
+                            query = sortColumnDir == "asc" ? query.OrderBy(u => u.PhoneNumber) : query.OrderByDescending(u => u.PhoneNumber);
+                            break;
+                        case "address":
+                            query = sortColumnDir == "asc" ? query.OrderBy(u => u.Address) : query.OrderByDescending(u => u.Address);
+                            break;
+                        default:
+                            break;
+                    }
                 }
 
                 // Paging
                 var recordsTotal = await query.CountAsync();
                 var data = await query.Skip(start).Take(length).ToListAsync();
 
-                return Json(new
+                var responseData = new
                 {
                     draw = draw,
                     recordsTotal = recordsTotal,
                     recordsFiltered = recordsTotal,
                     data = data.Select((u, index) => new
                     {
-                        no = index + 1,
+                        no = start + index + 1,
                         userName = u.UserName,
                         email = u.Email,
                         phoneNumber = u.PhoneNumber,
-                        address = u.Address
+                        address = u.Address,
+                        userId = u.UserId,
                     })
-                });
+                };
+
+                return Json(responseData);
             }
             catch (Exception ex)
             {
@@ -112,7 +127,10 @@ namespace WholesaleDistributionApp.Controllers
                     return Json(new { success = false, message = "Email already exists." });
                 }
 
-                var user = new WholesaleDistributionAppUser();
+                var user = new WholesaleDistributionAppUser
+                {
+                    PhoneNumber = model.PhoneNumber
+                };
                 await _userStore.SetUserNameAsync(user, model.UserName, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, model.Email, CancellationToken.None);
 
@@ -193,6 +211,147 @@ namespace WholesaleDistributionApp.Controllers
 
             [Display(Name = "Address")]
             public string Address { get; set; }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUser(string id)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(id);
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "User not found."+id });
+                }
+
+                var userInfo = await _context.UserInfo.FirstOrDefaultAsync(u => u.UserId == user.Id);
+
+                var userData = new
+                {
+                    id = user.Id,
+                    userName = user.UserName,
+                    email = user.Email,
+                    phoneNumber = user.PhoneNumber,
+                    address = userInfo?.Address ?? ""
+                };
+
+                return Json(userData);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "An error occurred while fetching user.", error = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditUser(EditModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var user = await _userManager.FindByIdAsync(model.UserId);
+                    if (user == null)
+                    {
+                        return Json(new { success = false, message = "User not found." });
+                    }
+
+                    // Check if UserName is being updated and if it already exists
+                    if (user.UserName != model.UserName && await _userManager.FindByNameAsync(model.UserName) != null)
+                    {
+                        return Json(new { success = false, message = "Username already exists." });
+                    }
+
+                    // Check if Email is being updated and if it already exists
+                    if (user.Email != model.Email && await _userManager.FindByEmailAsync(model.Email) != null)
+                    {
+                        return Json(new { success = false, message = "Email address already exists." });
+                    }
+
+                    user.UserName = model.UserName;
+                    user.Email = model.Email;
+                    user.PhoneNumber = model.PhoneNumber;
+
+                    var updateResult = await _userManager.UpdateAsync(user);
+                    if (!updateResult.Succeeded)
+                    {
+                        return Json(new { success = false, message = "Failed to update user." });
+                    }
+
+                    var userInfo = await _context.UserInfo.FirstOrDefaultAsync(u => u.UserId == user.Id);
+                    if (userInfo != null)
+                    {
+                        userInfo.UserName = model.UserName;
+                        userInfo.Email = model.Email;
+                        userInfo.PhoneNumber = model.PhoneNumber;
+                        userInfo.Address = model.Address;
+                        _context.Entry(userInfo).State = EntityState.Modified;
+                        await _context.SaveChangesAsync();
+                    }
+
+                    return Json(new { success = true });
+                }
+                catch (Exception ex)
+                {
+                    return Json(new { success = false, message = "An error occurred while updating user.", error = ex.Message });
+                }
+            }
+
+            return Json(new { success = false, message = "Invalid model state.", errors = ModelState.Values.SelectMany(v => v.Errors).ToList() });
+        }
+
+
+        public class EditModel
+        {
+            [Required]
+            [Display(Name = "UserName")]
+            public string UserName { get; set; }
+
+            [Required]
+            [EmailAddress]
+            [Display(Name = "Email")]
+            public string Email { get; set; }
+
+            [Display(Name = "PhoneNumber")]
+            public string PhoneNumber { get; set; }
+
+            [Display(Name = "Address")]
+            public string Address { get; set; }
+
+            [Display(Name = "UserId")]
+            public string UserId { get; set; }
+        }
+        [HttpPost]
+        public async Task<IActionResult> DeleteUser(string id)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(id);
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "User not found." });
+                }
+
+                var result = await _userManager.DeleteAsync(user);
+                if (result.Succeeded)
+                {
+                    var userInfo = await _context.UserInfo.FirstOrDefaultAsync(u => u.UserId == user.Id);
+                    if (userInfo != null)
+                    {
+                        _context.UserInfo.Remove(userInfo);
+                        await _context.SaveChangesAsync();
+                    }
+                    return Json(new { success = true });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Failed to delete user." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "An error occurred while deleting user.", error = ex.Message });
+            }
         }
 
     }

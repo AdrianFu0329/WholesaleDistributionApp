@@ -58,28 +58,28 @@
             <div class="modal-body">
                 <form id="addForm">
                     <div class="form-group">
-                        <label for="addUserName" class="control-label">Name</label>
-                        <input type="text" id="addUserName" name="UserName" class="form-control" required />
+                        <label for="addUserName" class="control-label">Username</label>
+                        <input type="text" id="addUserName" name="UserName" class="form-control" required placeholder="Enter Username" />
                     </div>
                     <div class="form-group">
                         <label for="addEmail" class="control-label">Email</label>
-                        <input type="email" id="addEmail" name="Email" class="form-control" required />
+                        <input type="email" id="addEmail" name="Email" class="form-control" required placeholder="Enter Email" />
                     </div>
                     <div class="form-group">
                         <label for="addPassword" class="control-label">Password</label>
-                        <input type="password" id="addPassword" name="Password" class="form-control" required />
+                        <input type="password" id="addPassword" name="Password" class="form-control" required placeholder="Enter Password" />
                     </div>
                     <div class="form-group">
                         <label for="addConfirmPassword" class="control-label">Confirm Password</label>
-                        <input type="password" id="addConfirmPassword" name="ConfirmPassword" class="form-control" required />
+                        <input type="password" id="addConfirmPassword" name="ConfirmPassword" class="form-control" required placeholder="Confirm Password" />
                     </div>
                     <div class="form-group">
                         <label for="addPhoneNumber" class="control-label">Phone Number</label>
-                        <input type="text" id="addPhoneNumber" name="PhoneNumber" class="form-control" />
+                        <input type="text" id="addPhoneNumber" name="PhoneNumber" class="form-control" placeholder="Enter Phone Number" />
                     </div>
                     <div class="form-group">
                         <label for="addAddress" class="control-label">Address</label>
-                        <input type="text" id="addAddress" name="Address" class="form-control" />
+                        <input type="text" id="addAddress" name="Address" class="form-control" placeholder="Enter Address" />
                     </div>
                 </form>
             </div>
@@ -90,6 +90,7 @@
         </div>
     </div>
 </div>
+
 
 
 <!-- Edit Modal -->
@@ -104,7 +105,7 @@
                 <form id="editForm">
                     <input type="hidden" id="editUserId" name="UserId" />
                     <div class="form-group">
-                        <label for="editUserName" class="control-label">Name</label>
+                        <label for="editUserName" class="control-label">Username</label>
                         <input type="text" id="editUserName" name="UserName" class="form-control" />
                     </div>
                     <div class="form-group">
@@ -118,10 +119,6 @@
                     <div class="form-group">
                         <label for="editAddress" class="control-label">Address</label>
                         <input type="text" id="editAddress" name="Address" class="form-control" />
-                    </div>
-                    <div class="form-group">
-                        <label for="editUserRole" class="control-label">Role</label>
-                        <input type="text" id="editUserRole" name="UserRole" class="form-control" readonly />
                     </div>
                 </form>
             </div>
@@ -173,22 +170,23 @@
                         "data": null,
                         "className": "text-center",
                         "render": function (data, type, row) {
+                            // console.log('Calling editUser with id:', row.userId);
                             return `
-                                        <div class="dropdown">
-                                            <a href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="ri-more-2-fill"></i>
-                                            </a>
-                                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-                                                <li><a class="dropdown-item" href="#" onclick="editUser('${row.userId}')">Edit</a></li>
-                                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteUser('${row.userId}')">Delete</a></li>
-                                            </ul>
-                                        </div>
-                                    `;
+                   <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-primary btn-sm me-1" onclick="editUser('${row.userId}')">
+                            Edit
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteUser('${row.userId}')">
+                            Delete
+                        </button>
+                    </div>
+                `;
                         }
                     }
+
                 ],
                 "rowCallback": function (row, data, index) {
-                    $('td:eq(0)', row).html(index + 1);
+                    $('td:eq(0)', row).html(data.no);
                 },
                 "language": {
                     "emptyTable": "No data available"
@@ -201,7 +199,10 @@
                     console.error('Thrown:', thrown);
                 }
             });
-
+            // table.on('xhr', function () {
+            //     var data = table.ajax.json();
+            //     console.log('Data received from server:', data);
+            // });
             $('#saveAddButton').click(function () {
                 var formData = $('#addForm').serialize();
                 $.ajax({
@@ -212,6 +213,7 @@
                         if (response.success) {
                             $('#addModal').modal('hide');
                             alert("Admin Added Successfully.");
+                            $('#addForm')[0].reset();
                             table.ajax.reload();
                         } else {
                             alert(response.message || 'Failed to add user');
@@ -238,6 +240,7 @@
                     success: function (response) {
                         if (response.success) {
                             $('#editModal').modal('hide');
+                            alert("Admin's Information Edited Successfully.");
                             table.ajax.reload();
                         } else {
                             alert('Failed to edit user');
@@ -251,32 +254,33 @@
                     }
                 });
             });
-
-            $('#confirmDeleteButton').click(function () {
-                var userId = $(this).data('userid');
+            $('#confirmDeleteButton').on('click', function () {
+                var userId = $(this).data('user-id');
                 $.ajax({
-                    url: '/Admin/DeleteUser',
-                    method: 'DELETE',
-                    data: { id: userId },
+                    url: '/Admin/DeleteUser?id=' + userId,
+                    method: 'POST',
                     success: function (response) {
                         if (response.success) {
                             $('#deleteModal').modal('hide');
+                            alert("Admin deleted successfully.");
                             table.ajax.reload();
                         } else {
-                            alert('Failed to delete user');
+                            alert('Failed to delete admin.');
                         }
                     },
                     error: function (xhr, status, error) {
-                        alert('An error occurred while deleting the user.');
+                        alert('An error occurred while deleting the admin.');
                         console.error('XHR:', xhr);
                         console.error('Status:', status);
                         console.error('Error:', error);
                     }
                 });
             });
+
         });
 
         function editUser(id) {
+            console.log('Fetching user details for id:', id);
             $.ajax({
                 url: '/Admin/GetUser?id=' + id,
                 method: 'GET',
@@ -297,10 +301,10 @@
                 }
             });
         }
-
         function deleteUser(id) {
-            $('#confirmDeleteButton').data('userid', id);
             $('#deleteModal').modal('show');
+            $('#confirmDeleteButton').data('user-id', id);
         }
+
     </script>
 }
