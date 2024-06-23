@@ -23,69 +23,16 @@
     <div class="row">
         <!-- [ sample-page ] start -->
         <div class="col-sm-12">
-            @*             <div class="card">
+            <div class="card">
                 <div class="card-header">
-                    <h5>Hello hamid handsome</h5>
+                    <h5>Header Title</h5>
                 </div>
                 <div class="card-body">
+                    <p>Content</p>
                 </div>
-            </div> *@
-
-                    <div class="card">
-                <div class="card-header">
-                    <h5>Admin List</h5>
-                </div>
-                        <div class="card-body">
-@*                             <button type="button" class="btn btn-primary btn-animation waves-effect waves-light" data-text="Add Employee" data-bs-toggle="modal" data-bs-target="#myModal"><span>Add Employee</span></button>
-                            <br>
-                            <br> *@
-                            <div class="table-responsive">
-                        <table id="employeeTable" class="table table-secondary table-striped align-middle table-nowrap mb-0">
-                                    <thead>
-                                        <tr>
-                                    <th scope="col">No</th>
-                                    <th scope="col">Name</th>
-                                    <th scope="col">Email</th>
-                                    <th scope="col">Phone Number</th>
-                                    <th scope="col">Role</th>
-                                        </tr>
-                                    </thead>
-                                </table>
-                            </div>
-                        </div>
-                    </div> <!-- end card -->
-
+             </div> <!-- end card -->
         </div>
         <!-- [ sample-page ] end -->
     </div>
     <!-- [ Main Content ] end -->
 </div>
-
-@section Scripts {
-    <script>
-        $(document).ready(function () {
-            $('#employeeTable').DataTable({
-                "processing": true,
-                "serverSide": true,
-                "ajax": {
-                    "url": "/Admin/AdminManagement/LoadData",
-                    "type": "POST",
-                    "dataType": "json"
-                },
-                "columns": [
-                    { "data": "userName" },
-                    { "data": "email" },
-                    { "data": "phoneNumber" },
-                    { "data": "userRole" }
-                ],
-                "error": function (xhr, error, thrown) {
-                    alert('An error occurred while processing the data.');
-                    console.error('XHR:', xhr);
-                    console.error('Status:', xhr.status);
-                    console.error('Error:', error);
-                    console.error('Thrown:', thrown);
-                }
-            });
-        });
-    </script>
-}
