@@ -17,7 +17,7 @@ namespace WholesaleDistributionApp.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.4")
+                .HasAnnotation("ProductVersion", "8.0.6")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -222,6 +222,45 @@ namespace WholesaleDistributionApp.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("WholesaleDistributionApp.Models.Stock", b =>
+                {
+                    b.Property<string>("StockId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DistributorDeliveryStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("ForDetailerPurchase")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ImgDownloadURL")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ItemName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<double>("SinglePrice")
+                        .HasColumnType("float");
+
+                    b.Property<string>("StockDistributorId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("StockId");
+
+                    b.ToTable("Stock");
                 });
 
             modelBuilder.Entity("WholesaleDistributionApp.Models.UserInfo", b =>

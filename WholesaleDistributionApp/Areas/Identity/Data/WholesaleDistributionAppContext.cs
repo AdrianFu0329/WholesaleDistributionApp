@@ -15,6 +15,8 @@ public class WholesaleDistributionAppContext : IdentityDbContext<WholesaleDistri
 
     public DbSet<UserInfo> UserInfo { get; set; }
 
+    public DbSet<Stock> Stock { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

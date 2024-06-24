@@ -42,6 +42,11 @@ namespace WholesaleDistributionApp.Controllers
             return View();
         }
 
+        public IActionResult StockManagement()
+        {
+            return View();
+        }
+
         [HttpPost]
         public async Task<IActionResult> LoadData()
         {
@@ -354,5 +359,33 @@ namespace WholesaleDistributionApp.Controllers
             }
         }
 
+
+        public async Task<IActionResult> InitializeStockList()
+        {
+            try
+            {
+                var stockList = await _context.Stock.ToListAsync();
+                return PartialView("StockManagement", stockList);
+            }
+            catch (Exception ex)
+            {
+                // Log error here if needed
+                return BadRequest("Error initializing stock list.");
+            }
+        }
+        
+        public async Task<IActionResult> InitializeStockList()
+        {
+            try
+            {
+                var stockList = await _context.Stock.ToListAsync();
+                return PartialView("StockManagement", stockList);
+            }
+            catch (Exception ex)
+            {
+                // Log error here if needed
+                return BadRequest("Error initializing stock list.");
+            }
+        }
     }
 }
