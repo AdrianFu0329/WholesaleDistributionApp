@@ -1,0 +1,337 @@
+﻿@model List<WholesaleDistributionApp.Models.Stock>
+
+@{
+    ViewData["Title"] = "Stock Management";
+}
+
+<input type="hidden" id="currentUrl" value="@Url.Action("StockManagement", "Admin")" />
+<div class="pc-content">
+    <!-- Breadcrumb section -->
+    <div class="page-header">
+        <div class="page-block">
+            <div class="row align-items-center">
+                <div class="col-md-12">
+                    <div class="page-header-title">
+                        <h5 class="m-b-10">Stock Management</h5>
+                    </div>
+                    <ul class="breadcrumb">
+                        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+                        <li class="breadcrumb-item" aria-current="page">Stock Management</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Breadcrumb section -->
+    <!-- Main Content section -->
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title">Stock List</h5>
+                    <button type="button" class="btn btn-primary mb-4" data-bs-toggle="modal" data-bs-target="#addStockModal">Add Stock</button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="stockTable" class="table table-bordered table-striped table-hover" style="width:100%">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th scope="col" style="width: 5%">No</th>
+                                    <th scope="col">Stock ID</th>
+                                    <th scope="col">Stock Name</th>
+                                    <th scope="col">Quantity</th>
+                                    <th scope="col">Price per Item</th>
+                                    <th scope="col">Distributor ID</th>
+                                    <th scope="col">Is Available</th>
+                                    <th scope="col">Delivery Status</th>
+                                    <th scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model != null && Model.Count > 0)
+                                {
+                                    int index = 1;
+                                    foreach (var stock in Model)
+                                    {
+                                        <tr>
+                                            <td>@index</td>
+                                            <td>@stock.StockId</td>
+                                            <td>@stock.ItemName</td>
+                                            <td>@stock.Quantity</td>
+                                            <td>@stock.SinglePrice</td>
+                                            <td>@stock.StockDistributorId</td>
+                                            <td>@stock.ForRetailerPurchase</td>
+                                            <td>@stock.DistributorDeliveryStatus</td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <button type="button" class="btn btn-primary btn-sm me-1 editStockBtn" data-stock-id="@stock.StockId">
+                                                        Edit
+                                                    </button>
+                                                    <button type="button" class="btn btn-danger btn-sm" onclick="deleteStock('@stock.StockId')">
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        index++;
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="9" class="text-center">Currently No Stock in Warehouse</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Main Content section -->
+</div>
+
+<!-- Add Stock Modal -->
+<div class="modal fade" id="addStockModal" tabindex="-1" aria-labelledby="addStockModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addStockModalLabel">Add Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addStockForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="form-group">
+                        <label for="addItemName" class="control-label">Item Name</label>
+                        <input type="text" id="addItemName" name="ItemName" class="form-control" required placeholder="Enter Item Name" />
+                    </div>
+                    <div class="form-group">
+                        <label for="addDescription" class="control-label">Description</label>
+                        <textarea id="addDescription" name="Description" class="form-control" required placeholder="Enter Description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="addQuantity" class="control-label">Quantity</label>
+                        <input type="number" id="addQuantity" name="Quantity" class="form-control" required placeholder="Enter Quantity" />
+                    </div>
+                    <div class="form-group">
+                        <label for="addSinglePrice" class="control-label">Price per Item</label>
+                        <input type="text" id="addSinglePrice" name="SinglePrice" class="form-control" required placeholder="Enter Price per Item" />
+                    </div>
+                    <div class="form-group">
+                        <label for="addStockDistributorId" class="control-label">Distributor ID</label>
+                        <input type="text" id="addStockDistributorId" name="StockDistributorId" class="form-control" required placeholder="Enter Distributor ID" />
+                    </div>
+                    <div class="form-group">
+                        <label for="addImgDownloadURL" class="control-label">ImgDownloadURL</label>
+                        <input type="text" id="addImgDownloadURL" name="ImgDownloadURL" class="form-control" required placeholder="Enter ImgDownloadURL" />
+                    </div>
+                    <div class="form-group">
+                        <label for="addForRetailerPurchase" class="control-label">Is Available for Retailer Purchase</label>
+                        <select id="addForRetailerPurchase" name="ForRetailerPurchase" class="form-control" required>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="addDistributorDeliveryStatus" class="control-label">Delivery Status for Distributor</label>
+                        <select id="addDistributorDeliveryStatus" name="DistributorDeliveryStatus" class="form-control" required>
+                            <option value="Delivered">Delivered</option>
+                            <option value="In Transit">In Transit</option>
+                            <option value="Pending">Pending</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="addStock()">Add Stock</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Stock Modal -->
+<div class="modal fade" id="editStockModal" tabindex="-1" aria-labelledby="editStockModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editStockModalLabel">Edit Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editStockForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="editStockId" name="StockId" />
+                    <div class="form-group">
+                        <label for="editItemName" class="control-label">Item Name</label>
+                        <input type="text" id="editItemName" name="ItemName" class="form-control" required placeholder="Enter Item Name" />
+                    </div>
+                    <div class="form-group">
+                        <label for="editDescription" class="control-label">Description</label>
+                        <textarea id="editDescription" name="Description" class="form-control" required placeholder="Enter Description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="editQuantity" class="control-label">Quantity</label>
+                        <input type="number" id="editQuantity" name="Quantity" class="form-control" required placeholder="Enter Quantity" />
+                    </div>
+                    <div class="form-group">
+                        <label for="editSinglePrice" class="control-label">Price per Item</label>
+                        <input type="text" id="editSinglePrice" name="SinglePrice" class="form-control" required placeholder="Enter Price per Item" />
+                    </div>
+                    <div class="form-group">
+                        <label for="editStockDistributorId" class="control-label">Distributor ID</label>
+                        <input type="text" id="editStockDistributorId" name="StockDistributorId" class="form-control" required placeholder="Enter Distributor ID" />
+                    </div>
+                    <div class="form-group">
+                        <label for="editImgDownloadURL" class="control-label">ImgDownloadURL</label>
+                        <input type="text" id="editImgDownloadURL" name="ImgDownloadURL" class="form-control" required placeholder="Enter ImgDownloadURL" />
+                    </div>
+                    <div class="form-group">
+                        <label for="editForRetailerPurchase" class="control-label">Is Available for Retailer Purchase</label>
+                        <select id="editForRetailerPurchase" name="ForRetailerPurchase" class="form-control" required>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDistributorDeliveryStatus" class="control-label">Delivery Status for Distributor</label>
+                        <select id="editDistributorDeliveryStatus" name="DistributorDeliveryStatus" class="form-control" required>
+                            <option value="Delivered">Delivered</option>
+                            <option value="In Transit">In Transit</option>
+                            <option value="Pending">Pending</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="editStock()">Update Stock</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function addStock() {
+            var formData = $('#addStockForm').serialize();
+            $.ajax({
+                url: '@Url.Action("AddStock", "Admin")',
+                type: 'POST',
+                data: formData,
+                headers: {
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function (data) {
+                    if (data.success) {
+                        $('#addStockModal').modal('hide').on('hidden.bs.modal', function () {
+                            $('body').removeClass('modal-open');
+                            $('.modal-backdrop').remove();
+                            $('body').css('padding-right', '');
+                        });
+                        alert("Stock added successfully.");
+                        $('#addStockForm')[0].reset();
+                        location.reload();
+                    } else {
+                        // Display validation errors
+                        var errorMessage = 'Error adding stock: ' + data.message;
+                        if (data.errors && data.errors.length > 0) {
+                            errorMessage += '\n' + data.errors.join('\n');
+                        }
+                        console.error(errorMessage);
+                        alert(errorMessage);
+                    }
+                },
+                error: function (error) {
+                    console.error('Error adding stock:', error);
+                    alert('Error adding stock: ' + error.statusText);
+                }
+            });
+        }
+
+        function editStock() {
+            // Get values from the form
+            var stockId = $('#editStockId').val();
+            var itemName = $('#editItemName').val();
+            var description = $('#editDescription').val();
+            var quantity = $('#editQuantity').val();
+            var singlePrice = $('#editSinglePrice').val();
+            var stockDistributorId = $('#editStockDistributorId').val();
+            var imgDownloadURL = $('#editImgDownloadURL').val();
+            var forRetailerPurchase = $('#editForRetailerPurchase').val() === 'true'; // Convert to boolean
+
+            // Depending on the UI design, you might also want to convert the delivery status
+            var distributorDeliveryStatus = $('#editDistributorDeliveryStatus').val();
+
+            // Create an object to hold the data
+            var data = {
+                StockId: stockId,
+                ItemName: itemName,
+                Description: description,
+                Quantity: quantity,
+                SinglePrice: singlePrice,
+                StockDistributorId: stockDistributorId,
+                ImgDownloadURL: imgDownloadURL,
+                ForRetailerPurchase: forRetailerPurchase,
+                DistributorDeliveryStatus: distributorDeliveryStatus
+            };
+
+            // Perform an AJAX request to update the stock
+            $.ajax({
+                url: '@Url.Action("UpdateStock", "Admin")',
+                type: 'POST',
+                data: data,
+                headers: {
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function (response) {
+                    if (response.success) {
+                        $('#editStockModal').modal('hide');
+                        alert("Stock updated successfully.");
+                        location.reload();
+                    } else {
+                        alert('Failed to update stock: ' + response.message);
+                    }
+                },
+                error: function (error) {
+                    console.error('Error updating stock:', error);
+                    alert('Error updating stock: ' + error.statusText);
+                }
+            });
+        }
+
+
+        function populateEditModal(stockId) {
+            $.ajax({
+                url: '@Url.Action("GetStockDetails", "Admin")',
+                type: 'GET',
+                data: { stockIdentifier: stockId },
+                success: function (data) {
+                    if (data.success) {
+                        $('#editStockId').val(data.stock.stockId);
+                        $('#editItemName').val(data.stock.itemName);
+                        $('#editDescription').val(data.stock.description); // Populate Description field
+                        $('#editQuantity').val(data.stock.quantity);
+                        $('#editSinglePrice').val(data.stock.singlePrice);
+                        $('#editStockDistributorId').val(data.stock.stockDistributorId);
+                        $('#editImgDownloadURL').val(data.stock.imgDownloadURL); // Populate ImgDownloadURL field
+                        $('#editForRetailerPurchase').val(data.stock.forRetailerPurchase.toString()); // Convert boolean to string
+                        $('#editDistributorDeliveryStatus').val(data.stock.distributorDeliveryStatus);
+                        $('#editStockModal').modal('show');
+                    } else {
+                        alert('Error fetching stock details: ' + data.message);
+                    }
+                },
+                error: function (error) {
+                    console.error('Error fetching stock details:', error);
+                    alert('Error fetching stock details: ' + error.statusText);
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            $('.editStockBtn').on('click', function () {
+                var stockId = $(this).data('stock-id');
+                populateEditModal(stockId);
+            });
+        });
+    </script>
+}

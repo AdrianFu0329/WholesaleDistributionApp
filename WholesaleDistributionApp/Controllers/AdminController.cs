@@ -42,9 +42,11 @@ namespace WholesaleDistributionApp.Controllers
             return View();
         }
 
-        public IActionResult StockManagement()
+        public async Task<IActionResult> StockManagement()
         {
-            return View();
+            // Load stock data
+            List<Stock> stocks = await _context.Stock.ToListAsync();
+            return View(stocks);
         }
 
         [HttpPost]
@@ -359,33 +361,101 @@ namespace WholesaleDistributionApp.Controllers
             }
         }
 
+        // Stock Management
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddStock(AddStockViewModel viewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var stock = new Stock
+                    {
+                        StockId = Guid.NewGuid().ToString(),
+                        ItemName = viewModel.ItemName,
+                        Description = viewModel.Description,
+                        Quantity = viewModel.Quantity,
+                        SinglePrice = viewModel.SinglePrice,
+                        StockDistributorId = viewModel.StockDistributorId,
+                        ImgDownloadURL = viewModel.ImgDownloadURL,
+                        ForRetailerPurchase = viewModel.ForRetailerPurchase,
+                        DistributorDeliveryStatus = viewModel.DistributorDeliveryStatus
+                    };
 
-        public async Task<IActionResult> InitializeStockList()
-        {
-            try
-            {
-                var stockList = await _context.Stock.ToListAsync();
-                return PartialView("StockManagement", stockList);
+                    _context.Stock.Add(stock);
+                    await _context.SaveChangesAsync();
+                    return Json(new { success = true });
+                }
+                catch (Exception ex)
+                {
+                    // Log the exception or handle it appropriately
+                    return Json(new { success = false, message = ex.Message });
+                }
             }
-            catch (Exception ex)
-            {
-                // Log error here if needed
-                return BadRequest("Error initializing stock list.");
-            }
+
+            // If ModelState is not valid, return the validation errors
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            return Json(new { success = false, message = "Validation failed", errors });
         }
-        
-        public async Task<IActionResult> InitializeStockList()
+
+        public async Task<IActionResult> GetStockDetails(string stockIdentifier)
         {
-            try
+            _logger.LogInformation($"GetStockDetails called with stockIdentifier: {stockIdentifier}");
+
+            if (string.IsNullOrEmpty(stockIdentifier))
             {
-                var stockList = await _context.Stock.ToListAsync();
-                return PartialView("StockManagement", stockList);
+                _logger.LogWarning("Stock identifier is required but was not provided.");
+                return Json(new { success = false, message = "Stock identifier is required." });
             }
-            catch (Exception ex)
+
+            stockIdentifier = stockIdentifier.ToLower(); // Convert to lower case for case-insensitive comparison
+
+            var stock = await _context.Stock.FirstOrDefaultAsync(s =>
+                s.StockId.ToLower() == stockIdentifier ||
+                s.ItemName.ToLower() == stockIdentifier ||
+                s.StockDistributorId.ToLower() == stockIdentifier);
+
+            if (stock == null)
             {
-                // Log error here if needed
-                return BadRequest("Error initializing stock list.");
+                _logger.LogWarning($"Stock not found for stockIdentifier: {stockIdentifier}");
+                return Json(new { success = false, message = "Stock not found." });
             }
+
+            _logger.LogInformation($"Stock details retrieved successfully for stockIdentifier: {stockIdentifier}");
+            return Json(new { success = true, stock });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateStock(Stock stock)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    _context.Update(stock);
+                    await _context.SaveChangesAsync();
+                    return Json(new { success = true });
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!StockExists(Guid.Parse(stock.StockId)))
+                    {
+                        return Json(new { success = false, message = "Stock not found." });
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+            }
+
+            return Json(new { success = false, message = "Validation error.", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
+        }
+
+        private bool StockExists(Guid id)
+        {
+            return _context.Stock.Any(e => e.StockId.Equals(id));
         }
     }
 }
