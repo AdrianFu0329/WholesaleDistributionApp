@@ -168,9 +168,13 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="editStockForm" method="post">
+                <form id="editStockForm" method="post" enctype="multipart/form-data">
                     @Html.AntiForgeryToken()
                     <input type="hidden" id="editStockId" name="StockId" />
+                    <div class="form-group">
+                        <label for="editImage" class="control-label">Upload New Stock Image</label>
+                        <input type="file" id="editStockImage" name="ImageFile" class="form-control" />
+                    </div>
                     <div class="form-group">
                         <label for="editItemName" class="control-label">Item Name</label>
                         <input type="text" id="editItemName" name="ItemName" class="form-control" required placeholder="Enter Item Name" />
@@ -192,10 +196,6 @@
                         <input type="text" id="editStockDistributorId" name="StockDistributorId" class="form-control" required placeholder="Enter Distributor ID" />
                     </div>
                     <div class="form-group">
-                        <label for="editImgDownloadURL" class="control-label">ImgDownloadURL</label>
-                        <input type="text" id="editImgDownloadURL" name="ImgDownloadURL" class="form-control" required placeholder="Enter ImgDownloadURL" />
-                    </div>
-                    <div class="form-group">
                         <label for="editForRetailerPurchase" class="control-label">Is Available for Retailer Purchase</label>
                         <select id="editForRetailerPurchase" name="ForRetailerPurchase" class="form-control" required>
                             <option value="true">Yes</option>
@@ -210,7 +210,7 @@
                             <option value="Pending">Pending</option>
                         </select>
                     </div>
-                    <button type="button" class="btn btn-primary" onclick="editStock()">Update Stock</button>
+                    <button type="button" class="btn btn-primary" onclick="editStock()">Save Changes</button>
                 </form>
             </div>
         </div>
@@ -325,37 +325,21 @@
         }
 
         function editStock() {
-            // Get values from the form
-            var stockId = $('#editStockId').val();
-            var itemName = $('#editItemName').val();
-            var description = $('#editDescription').val();
-            var quantity = $('#editQuantity').val();
-            var singlePrice = $('#editSinglePrice').val();
-            var stockDistributorId = $('#editStockDistributorId').val();
-            var imgDownloadURL = $('#editImgDownloadURL').val();
-            var forRetailerPurchase = $('#editForRetailerPurchase').val() === 'true'; // Convert to boolean
+            var form = $('#editStockForm')[0];
+            var formData = new FormData(form);
 
-            // Depending on the UI design, you might also want to convert the delivery status
-            var distributorDeliveryStatus = $('#editDistributorDeliveryStatus').val();
+            // Image file handling
+            var fileInput = document.getElementById('editStockImage');
+            if (fileInput.files.length > 0) {
+                formData.append('ImageFile', fileInput.files[0]);
+            }
 
-            // Create an object to hold the data
-            var data = {
-                StockId: stockId,
-                ItemName: itemName,
-                Description: description,
-                Quantity: quantity,
-                SinglePrice: singlePrice,
-                StockDistributorId: stockDistributorId,
-                ImgDownloadURL: imgDownloadURL,
-                ForRetailerPurchase: forRetailerPurchase,
-                DistributorDeliveryStatus: distributorDeliveryStatus
-            };
-
-            // Perform an AJAX request to update the stock
             $.ajax({
                 url: '@Url.Action("UpdateStock", "Admin")',
                 type: 'POST',
-                data: data,
+                data: formData,
+                processData: false, // prevent jQuery from automatically transforming the data into a query string
+                contentType: false, // prevent jQuery from setting content type
                 headers: {
                     'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
                 },
@@ -365,7 +349,12 @@
                         alert("Stock updated successfully.");
                         location.reload();
                     } else {
-                        alert('Failed to update stock: ' + response.message);
+                        if (response.errors && response.errors.length > 0) {
+                            var errorMessage = response.errors.join('\n');
+                            alert('Failed to update stock:\n' + errorMessage);
+                        } else {
+                            alert('Failed to update stock: ' + response.message);
+                        }
                     }
                 },
                 error: function (error) {
@@ -412,12 +401,12 @@
                     if (data.success) {
                         $('#editStockId').val(data.stock.stockId);
                         $('#editItemName').val(data.stock.itemName);
-                        $('#editDescription').val(data.stock.description); // Populate Description field
+                        $('#editDescription').val(data.stock.description);
                         $('#editQuantity').val(data.stock.quantity);
                         $('#editSinglePrice').val(data.stock.singlePrice);
                         $('#editStockDistributorId').val(data.stock.stockDistributorId);
-                        $('#editImgDownloadURL').val(data.stock.imgDownloadURL); // Populate ImgDownloadURL field
-                        $('#editForRetailerPurchase').val(data.stock.forRetailerPurchase.toString()); // Convert boolean to string
+                        $('#editImgDownloadURL').val(data.stock.imgDownloadURL); 
+                        $('#editForRetailerPurchase').val(data.stock.forRetailerPurchase.toString());
                         $('#editDistributorDeliveryStatus').val(data.stock.distributorDeliveryStatus);
                         $('#editStockModal').modal('show');
                     } else {

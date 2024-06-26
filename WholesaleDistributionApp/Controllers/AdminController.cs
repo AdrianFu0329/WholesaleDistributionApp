@@ -434,18 +434,6 @@ namespace WholesaleDistributionApp.Controllers
             return Json(new { success = false, message = "Validation failed", errors });
         }
 
-        [HttpGet]
-        public IActionResult StockDetails(string id)
-        {
-            var stock = _stockService.GetStockById(id);
-            if (stock == null)
-            {
-                return NotFound();
-            }
-
-            return Json(stock);
-        }
-
         public async Task<IActionResult> GetStockDetails(string stockIdentifier)
         {
             _logger.LogInformation($"GetStockDetails called with stockIdentifier: {stockIdentifier}");
@@ -474,30 +462,75 @@ namespace WholesaleDistributionApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdateStock(Stock stock)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateStock([FromForm] UpdateStockModel model, IFormFile ImageFile)
         {
-            if (ModelState.IsValid)
+            if (model == null || string.IsNullOrEmpty(model.StockId))
             {
-                try
-                {
-                    _context.Update(stock);
-                    await _context.SaveChangesAsync();
-                    return Json(new { success = true });
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!StockExists(Guid.Parse(stock.StockId)))
-                    {
-                        return Json(new { success = false, message = "Stock not found." });
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                return Json(new { success = false, message = "Invalid stock data." });
             }
 
-            return Json(new { success = false, message = "Validation error.", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
+            var stock = await _context.Stock.FindAsync(model.StockId);
+            if (stock == null)
+            {
+                return Json(new { success = false, message = "Stock not found." });
+            }
+
+            // Update stock details
+            stock.ItemName = model.ItemName;
+            stock.Description = model.Description;
+            stock.Quantity = model.Quantity;
+            stock.SinglePrice = model.SinglePrice;
+            stock.StockDistributorId = model.StockDistributorId;
+            stock.ForRetailerPurchase = model.ForRetailerPurchase;
+            stock.DistributorDeliveryStatus = model.DistributorDeliveryStatus;
+
+            try
+            {
+                // Handle image upload
+                if (ImageFile != null && ImageFile.Length > 0)
+                {
+                    var fileName = Path.GetFileName(ImageFile.FileName);
+                    var directoryPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+
+                    // Ensure the directory exists
+                    if (!Directory.Exists(directoryPath))
+                    {
+                        Directory.CreateDirectory(directoryPath);
+                    }
+
+                    var filePath = Path.Combine(directoryPath, fileName);
+
+                    // Delete previous image if it exists
+                    if (!string.IsNullOrEmpty(stock.ImgDownloadURL))
+                    {
+                        var previousImagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", stock.ImgDownloadURL.TrimStart('/'));
+                        if (System.IO.File.Exists(previousImagePath))
+                        {
+                            System.IO.File.Delete(previousImagePath);
+                        }
+                    }
+
+                    // Save new image
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await ImageFile.CopyToAsync(stream);
+                    }
+
+                    var imgDownloadURL = $"/images/{fileName}";
+                    stock.ImgDownloadURL = imgDownloadURL;
+                }
+
+                _context.Stock.Update(stock);
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                // Log the exception or handle it appropriately
+                return Json(new { success = false, message = $"Error updating stock: {ex.Message}" });
+            }
         }
 
         private bool StockExists(Guid id)
