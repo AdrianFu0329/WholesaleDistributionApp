@@ -22,12 +22,15 @@ namespace WholesaleDistributionApp.Controllers
         private readonly IUserEmailStore<WholesaleDistributionAppUser> _emailStore;
         private readonly ILogger<AdminController> _logger;
         private readonly IServiceProvider _serviceProvider;
+        private readonly FileService _fileService;
+        private readonly StockService _stockService;
 
         // Constructor with dependency injection for WholesaleDistributionAppContext
         public AdminController(WholesaleDistributionAppContext context, UserManager<WholesaleDistributionAppUser> userManager,
         IUserStore<WholesaleDistributionAppUser> userStore,
         ILogger<AdminController> logger,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        FileService fileService)
         {
             _context = context;
             _userManager = userManager;
@@ -35,6 +38,7 @@ namespace WholesaleDistributionApp.Controllers
             _emailStore = GetEmailStore();
             _logger = logger;
             _serviceProvider = serviceProvider;
+            _fileService = fileService;
         }
 
         public IActionResult AdminManagement()
@@ -42,11 +46,19 @@ namespace WholesaleDistributionApp.Controllers
             return View();
         }
 
-        public async Task<IActionResult> StockManagement()
+        public async Task<IActionResult> StockManagement(string searchString)
         {
-            // Load stock data
-            List<Stock> stocks = await _context.Stock.ToListAsync();
-            return View(stocks);
+            // Load Stocks
+            var stocks = _context.Stock.AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                stocks = stocks.Where(s => s.ItemName.Contains(searchString) ||
+                                           s.Description.Contains(searchString) ||
+                                           s.StockDistributorId.Contains(searchString));
+            }
+
+            return View(stocks.ToList());
         }
 
         [HttpPost]
@@ -364,12 +376,35 @@ namespace WholesaleDistributionApp.Controllers
         // Stock Management
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddStock(AddStockViewModel viewModel)
+        public async Task<IActionResult> AddStock(AddStockViewModel viewModel, IFormFile ImageFile)
         {
             if (ModelState.IsValid)
             {
                 try
                 {
+                    string imgDownloadURL = null;
+
+                    if (ImageFile != null && ImageFile.Length > 0)
+                    {
+                        var fileName = Path.GetFileName(ImageFile.FileName);
+                        var directoryPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+
+                        // Ensure the directory exists
+                        if (!Directory.Exists(directoryPath))
+                        {
+                            Directory.CreateDirectory(directoryPath);
+                        }
+
+                        var filePath = Path.Combine(directoryPath, fileName);
+
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await ImageFile.CopyToAsync(stream);
+                        }
+
+                        imgDownloadURL = $"/images/{fileName}";
+                    }
+
                     var stock = new Stock
                     {
                         StockId = Guid.NewGuid().ToString(),
@@ -378,7 +413,7 @@ namespace WholesaleDistributionApp.Controllers
                         Quantity = viewModel.Quantity,
                         SinglePrice = viewModel.SinglePrice,
                         StockDistributorId = viewModel.StockDistributorId,
-                        ImgDownloadURL = viewModel.ImgDownloadURL,
+                        ImgDownloadURL = imgDownloadURL,
                         ForRetailerPurchase = viewModel.ForRetailerPurchase,
                         DistributorDeliveryStatus = viewModel.DistributorDeliveryStatus
                     };
@@ -397,6 +432,18 @@ namespace WholesaleDistributionApp.Controllers
             // If ModelState is not valid, return the validation errors
             var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
             return Json(new { success = false, message = "Validation failed", errors });
+        }
+
+        [HttpGet]
+        public IActionResult StockDetails(string id)
+        {
+            var stock = _stockService.GetStockById(id);
+            if (stock == null)
+            {
+                return NotFound();
+            }
+
+            return Json(stock);
         }
 
         public async Task<IActionResult> GetStockDetails(string stockIdentifier)

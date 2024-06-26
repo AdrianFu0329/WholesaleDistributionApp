@@ -7,7 +7,7 @@
         public int Quantity { get; set; }
         public double SinglePrice { get; set; }
         public string StockDistributorId { get; set; }
-        public string ImgDownloadURL { get; set; }
+        public string? ImgDownloadURL { get; set; }
         public bool ForRetailerPurchase { get; set; }
         public string DistributorDeliveryStatus { get; set; }
     }

@@ -18,5 +18,10 @@ public class StockService
         return await _context.Stock.ToListAsync();
     }
 
+    public Stock GetStockById(string id)
+    {
+        return _context.Stock.FirstOrDefault(s => s.StockId == id);
+    }
+
     // Add more methods as needed for specific queries or CRUD operations
 }

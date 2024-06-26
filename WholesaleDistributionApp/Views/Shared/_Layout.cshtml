@@ -78,14 +78,19 @@
                     </li>
                     @if (User.IsInRole("Admin"))
                     {
-                                <li class="pc-item">
+                        <li class="pc-item">
                             <a class="pc-link" asp-controller="Admin" asp-action="AdminManagement">
-                                        <span class="pc-micon"><i class="ti ti-user"></i></span>
-                                        <span class="pc-mtext">Admin Management</span>
-                                    </a>
-                                </li>
+                                <span class="pc-micon"><i class="ti ti-user"></i></span>
+                                <span class="pc-mtext">Admin Management</span>
+                            </a>
+                        </li>
+                        <li class="pc-item">
+                            <a class="pc-link" asp-controller="Admin" asp-action="StockManagement">
+                                <span class="pc-micon"><i class="ti ti-truck"></i></span>
+                                <span class="pc-mtext">Stock Management</span>
+                            </a>
+                        </li>
                     }
-
                     <li class="pc-item">
                         <a href="#" class="pc-link">
                             <span class="pc-micon"><i class="ti ti-color-swatch"></i></span>
@@ -145,12 +150,6 @@
                         <a class="pc-link" asp-controller="Home" asp-action="Sample">
                             <span class="pc-micon"><i class="ti ti-brand-chrome"></i></span>
                             <span class="pc-mtext">Sample page</span>
-                        </a>
-                    </li>
-                    <li class="pc-item">
-                        <a class="pc-link" asp-controller="Admin" asp-action="StockManagement">
-                            <span class="pc-micon"><i class="ti ti-brand-chrome"></i></span>
-                            <span class="pc-mtext">Stock Management</span>
                         </a>
                     </li>
                 </ul>
