@@ -67,7 +67,7 @@
                                                     <button type="button" class="btn btn-primary btn-sm me-1 editStockBtn" data-stock-id="@stock.StockId">
                                                         Edit
                                                     </button>
-                                                    <button type="button" class="btn btn-danger btn-sm" onclick="deleteStock('@stock.StockId')">
+                                                    <button type="button" class="btn btn-danger btn-sm deleteStockBtn" data-stock-id="@stock.StockId">
                                                         Delete
                                                     </button>
                                                 </div>
@@ -206,6 +206,25 @@
         </div>
     </div>
 </div>
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteStockModal" tabindex="-1" aria-labelledby="deleteStockModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteStockModalLabel">Delete Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this stock item?</p>
+                <input type="hidden" id="deleteStockId" />
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteStock()">Yes</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
@@ -298,6 +317,33 @@
             });
         }
 
+        function confirmDeleteStock() {
+            var stockId = $('#deleteStockId').val();
+
+            $.ajax({
+                url: '@Url.Action("DeleteStock", "Admin")',
+                type: 'POST',
+                data: {
+                    stockId: stockId
+                },
+                headers: {
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function (response) {
+                    if (response.success) {
+                        $('#deleteStockModal').modal('hide');
+                        alert("Stock deleted successfully.");
+                        location.reload();
+                    } else {
+                        alert('Failed to delete stock: ' + response.message);
+                    }
+                },
+                error: function (error) {
+                    console.error('Error deleting stock:', error);
+                    alert('Error deleting stock: ' + error.statusText);
+                }
+            });
+        }
 
         function populateEditModal(stockId) {
             $.ajax({
@@ -331,6 +377,12 @@
             $('.editStockBtn').on('click', function () {
                 var stockId = $(this).data('stock-id');
                 populateEditModal(stockId);
+            });
+
+            $('.deleteStockBtn').on('click', function () {
+                var stockId = $(this).data('stock-id');
+                $('#deleteStockId').val(stockId);
+                $('#deleteStockModal').modal('show');
             });
         });
     </script>

@@ -457,5 +457,26 @@ namespace WholesaleDistributionApp.Controllers
         {
             return _context.Stock.Any(e => e.StockId.Equals(id));
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteStock(string stockId)
+        {
+            if (string.IsNullOrEmpty(stockId))
+            {
+                return Json(new { success = false, message = "Invalid stock ID" });
+            }
+
+            var stock = await _context.Stock.FindAsync(stockId);
+            if (stock == null)
+            {
+                return Json(new { success = false, message = "Stock not found" });
+            }
+
+            _context.Stock.Remove(stock);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Stock deleted successfully" });
+        }
     }
 }
