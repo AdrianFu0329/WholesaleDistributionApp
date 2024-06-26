@@ -23,8 +23,23 @@
     <!-- [Template CSS Files] -->
     <link rel="stylesheet" href="~/assets/css/style.css" id="main-style-link">
     <link rel="stylesheet" href="~/assets/css/style-preset.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
+    @using Microsoft.AspNetCore.Identity
+    @using WholesaleDistributionApp.Areas.Identity.Data
+    @inject SignInManager<WholesaleDistributionAppUser> SignInManager
+    @inject UserManager<WholesaleDistributionAppUser> UserManager
+
+    @* Login and Register Buttons *@
+
+    @{
+        var user = await UserManager.GetUserAsync(User);
+        var username = user?.UserName;
+        var roles = user != null ? await UserManager.GetRolesAsync(user) : new List<string>();
+        var role = roles.FirstOrDefault() ?? "Guest";
+    }
     <!-- [ Pre-loader ] start -->
     <div class="loader-bg">
         <div class="loader-track">
@@ -36,13 +51,17 @@
     <nav class="pc-sidebar">
         <div class="navbar-wrapper">
             <div class="m-header">
-                <a class="b-brand text-primary" asp-controller="Home" asp-action="Index" >
+                <a class="b-brand text-primary" asp-controller="Home" asp-action="Index">
                     <!-- ========   Change your logo from here   ============ -->
                     <img src="~/assets/images/logo-dark.svg" alt="" class="logo logo-lg">
                 </a>
             </div>
             <div class="navbar-content">
                 <ul class="pc-navbar">
+                    @*                     <li class="pc-item pc-caption">
+                        <label>Pages</label>
+                        <i class="ti ti-news"></i>
+                    </li> *@
                     <li class="pc-item pc-caption">
                         <label>Dashboard</label>
                         <i class="ti ti-dashboard"></i>
@@ -54,15 +73,26 @@
                     </li>
 
                     <li class="pc-item pc-caption">
-                        <label>Elements</label>
+                        <label>Management</label>
                         <i class="ti ti-apps"></i>
                     </li>
-                    <li class="pc-item">
-                        <a href="#" class="pc-link">
-                            <span class="pc-micon"><i class="ti ti-typography"></i></span>
-                            <span class="pc-mtext">Typography</span>
-                        </a>
-                    </li>
+                    @if (User.IsInRole("Admin"))
+                    {
+                                <li class="pc-item">
+                            <a class="pc-link" asp-controller="Admin" asp-action="AdminManagement">
+                                        <span class="pc-micon"><i class="ti ti-user"></i></span>
+                                        <span class="pc-mtext">Admin Management</span>
+                                    </a>
+                                </li>
+
+                        <li class="pc-item">
+                            <a class="pc-link" asp-controller="Admin" asp-action="UserManagement">
+                                <span class="pc-micon"><i class="ti ti-user"></i></span>
+                                <span class="pc-mtext">User Management</span>
+                            </a>
+                        </li>
+                    }
+
                     <li class="pc-item">
                         <a href="#" class="pc-link">
                             <span class="pc-micon"><i class="ti ti-color-swatch"></i></span>
@@ -75,24 +105,6 @@
                             <span class="pc-mtext">Icons</span>
                         </a>
                     </li>
-
-                    <li class="pc-item pc-caption">
-                        <label>Pages</label>
-                        <i class="ti ti-news"></i>
-                    </li>
-                    <li class="pc-item">
-                        <a class="pc-link" asp-controller="Home" asp-action="Login">
-                            <span class="pc-micon"><i class="ti ti-lock"></i></span>
-                            <span class="pc-mtext">Login</span>
-                        </a>
-                    </li>
-                    <li class="pc-item">
-                        <a class="pc-link" asp-controller="Home" asp-action="Register">
-                            <span class="pc-micon"><i class="ti ti-user-plus"></i></span>
-                            <span class="pc-mtext">Register</span>
-                        </a>
-                    </li>
-
                     <li class="pc-item pc-caption">
                         <label>Other</label>
                         <i class="ti ti-brand-chrome"></i>
@@ -180,98 +192,120 @@
                         <form class="header-search">
                             <i data-feather="search" class="icon-search"></i>
                             <input type="search" class="form-control" placeholder="Search here. . .">
-@*                             <button class="btn btn-light-secondary btn-search"><i class="ti ti-adjustments-horizontal"></i></button>
- *@                        </form>
+                            @*                             <button class="btn btn-light-secondary btn-search"><i class="ti ti-adjustments-horizontal"></i></button>
+                            *@
+                        </form>
                     </li>
                 </ul>
             </div>
             <!-- [Mobile Media Block end] -->
             <div class="ms-auto">
                 <ul class="list-unstyled">
-@*                     <li class="dropdown pc-h-item">
-                        <a class="pc-head-link head-link-secondary dropdown-toggle arrow-none me-0" data-bs-toggle="dropdown" href="#"
-                           role="button" aria-haspopup="false" aria-expanded="false">
-                            <i class="ti ti-bell"></i>
-                        </a>
-                        <div class="dropdown-menu dropdown-notification dropdown-menu-end pc-h-dropdown">
-                            <div class="dropdown-header">
-                                <a href="#!" class="link-primary float-end text-decoration-underline">Mark as all read</a>
-                                <h5>All Notification <span class="badge bg-warning rounded-pill ms-1">01</span></h5>
-                            </div>
-                            <div class="dropdown-header px-0 text-wrap header-notification-scroll position-relative"
-                                 style="max-height: calc(100vh - 215px)">
-                                <div class="list-group list-group-flush w-100">
-                                    <div class="list-group-item list-group-item-action">
-                                        <div class="d-flex">
-                                            <div class="flex-shrink-0">
-                                                <div class="user-avtar bg-light-success"><i class="ti ti-building-store"></i></div>
-                                            </div>
-                                            <div class="flex-grow-1 ms-1">
-                                                <span class="float-end text-muted">3 min ago</span>
-                                                <h5>Store Verification Done</h5>
-                                                <p class="text-body fs-6">We have successfully received your request.</p>
-                                                <div class="badge rounded-pill bg-light-danger">Unread</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="list-group-item list-group-item-action">
-                                        <div class="d-flex">
-                                            <div class="flex-shrink-0">
-                                                <img src="~/assets/images/user/avatar-3.jpg" alt="user-image" class="user-avtar">
-                                            </div>
-                                            <div class="flex-grow-1 ms-1">
-                                                <span class="float-end text-muted">10 min ago</span>
-                                                <h5>Joseph William</h5>
-                                                <p class="text-body fs-6">It is a long established fact that a reader will be distracted </p>
-                                                <div class="badge rounded-pill bg-light-success">Confirmation of Account</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="dropdown-divider"></div>
-                            <div class="text-center py-2">
-                                <a href="#!" class="link-primary">Mark as all read</a>
-                            </div>
-                        </div>
+                    @*                     <li class="dropdown pc-h-item">
+                    <a class="pc-head-link head-link-secondary dropdown-toggle arrow-none me-0" data-bs-toggle="dropdown" href="#"
+                    role="button" aria-haspopup="false" aria-expanded="false">
+                    <i class="ti ti-bell"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-notification dropdown-menu-end pc-h-dropdown">
+                    <div class="dropdown-header">
+                    <a href="#!" class="link-primary float-end text-decoration-underline">Mark as all read</a>
+                    <h5>All Notification <span class="badge bg-warning rounded-pill ms-1">01</span></h5>
+                    </div>
+                    <div class="dropdown-header px-0 text-wrap header-notification-scroll position-relative"
+                    style="max-height: calc(100vh - 215px)">
+                    <div class="list-group list-group-flush w-100">
+                    <div class="list-group-item list-group-item-action">
+                    <div class="d-flex">
+                    <div class="flex-shrink-0">
+                    <div class="user-avtar bg-light-success"><i class="ti ti-building-store"></i></div>
+                    </div>
+                    <div class="flex-grow-1 ms-1">
+                    <span class="float-end text-muted">3 min ago</span>
+                    <h5>Store Verification Done</h5>
+                    <p class="text-body fs-6">We have successfully received your request.</p>
+                    <div class="badge rounded-pill bg-light-danger">Unread</div>
+                    </div>
+                    </div>
+                    </div>
+                    <div class="list-group-item list-group-item-action">
+                    <div class="d-flex">
+                    <div class="flex-shrink-0">
+                    <img src="~/assets/images/user/avatar-3.jpg" alt="user-image" class="user-avtar">
+                    </div>
+                    <div class="flex-grow-1 ms-1">
+                    <span class="float-end text-muted">10 min ago</span>
+                    <h5>Joseph William</h5>
+                    <p class="text-body fs-6">It is a long established fact that a reader will be distracted </p>
+                    <div class="badge rounded-pill bg-light-success">Confirmation of Account</div>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <div class="text-center py-2">
+                    <a href="#!" class="link-primary">Mark as all read</a>
+                    </div>
+                    </div>
                     </li> *@
-                    <li class="dropdown pc-h-item header-user-profile">
-                        <a class="pc-head-link head-link-primary dropdown-toggle arrow-none me-0" data-bs-toggle="dropdown" href="#"
-                           role="button" aria-haspopup="false" aria-expanded="false">
-                            <img src="~/assets/images/user/avatar-2.jpg" alt="user-image" class="user-avtar">
-                            <span>
-                                <i class="ti ti-settings"></i>
-                            </span>
-                        </a>
-                        <div class="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown">
-                            <div class="dropdown-header">
-                                <h4>Good Morning, <span class="small text-muted"> John Doe</span></h4>
-                                <p class="text-muted">Project Admin</p>
-                                <div class="profile-notification-scroll position-relative" style="max-height: calc(100vh - 280px)">
-                                    <a href="#" class="dropdown-item">
-                                        <i class="ti ti-settings"></i>
-                                        <span>Account Settings</span>
-                                    </a>
-                                    <a href="#" class="dropdown-item">
-                                        <i class="ti ti-user"></i>
-                                        <span>Social Profile</span>
-                                    </a>
-                                    <a class="dropdown-item" asp-controller="Home" asp-action="Login">
-                                        <i class="ti ti-logout"></i>
-                                        <span>Logout</span>
-                                    </a>
 
-                                </div>
-                            </div>
-                        </div>
-                    </li>
+
+                    @if (SignInManager.IsSignedIn(User))
+                    {
+                                    <li class="dropdown pc-h-item header-user-profile">
+                                        <a class="pc-head-link head-link-primary dropdown-toggle arrow-none me-0" data-bs-toggle="dropdown" href="#"
+                                           role="button" aria-haspopup="false" aria-expanded="false">
+                                            <img src="~/assets/images/user/avatar-2.jpg" alt="user-image" class="user-avtar">
+                                            <span>
+                                                <i class="ti ti-settings"></i>
+                                            </span>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown">
+                                            <div class="dropdown-header">
+                                                <h4>Good Morning, <span class="small text-muted">@username</span></h4>
+                                                <p class="text-muted">@role</p>
+                                                <div class="profile-notification-scroll position-relative" style="max-height: calc(100vh - 280px)">
+                                                    <a class="dropdown-item" asp-area="Identity" asp-page="/Account/Manage/Index">
+                                                        <i class="ti ti-settings"></i>
+                                                        <span>Account Settings</span>
+                                                    </a>
+                                                    <a href="#" class="dropdown-item">
+                                                        <i class="ti ti-user"></i>
+                                                        <span>Social Profile</span>
+                                                    </a>
+                                                    <form id="logoutForm" class="form-inline" method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                                                        <button href="#" id="logout" type="submit" class="dropdown-item">
+                                                            <i class="ti ti-logout"></i>
+                                                            <span>Logout</span>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </li>
+                    }
+                    else
+                    {
+                                    <li class="dropdown pc-h-item header-user-profile">
+                                        <a class="pc-head-link head-link-primary  dropdown-toggle arrow-none me-0" id="login" asp-area="Identity" asp-page="/Account/Login">
+                                            <i class="ti ti-lock"></i>
+                                            <span class="d-none d-md-inline">Login</span>
+                                        </a>
+                                    </li>
+                                    <li class="dropdown pc-h-item header-user-profile">
+                                        <a class="pc-head-link head-link-primary arrow-none me-0" id="register" asp-area="Identity" asp-page="/Account/Register">
+                                            <i class="ti ti-user-plus"></i>
+                                            <span class="d-none d-md-inline">Register</span>
+                                        </a>
+                                    </li>
+                    }
                 </ul>
             </div>
         </div>
     </header>
     <!-- [ Header ] end -->
     <div class="pc-container">
-            @RenderBody()
+        @RenderBody()
     </div>
 
     <footer class="pc-footer">
@@ -296,7 +330,7 @@
             </div>
         </div>
     </footer>
-    
+
     <!-- Required Js -->
     <script src="~/assets/js/plugins/popper.min.js"></script>
     <script src="~/assets/js/plugins/simplebar.min.js"></script>
@@ -335,9 +369,10 @@
     <!-- Apex Chart -->
     <script src="~/assets/js/plugins/apexcharts.min.js"></script>
     <script src="~/assets/js/pages/dashboard-default.js"></script>
-@*     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+@*  <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script> *@
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>
