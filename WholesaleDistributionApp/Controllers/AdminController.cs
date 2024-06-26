@@ -42,6 +42,11 @@ namespace WholesaleDistributionApp.Controllers
             return View();
         }
 
+        public IActionResult UserManagement()
+        {
+            return View();
+        }
+
         [HttpPost]
         public async Task<IActionResult> LoadData()
         {
@@ -55,6 +60,80 @@ namespace WholesaleDistributionApp.Controllers
                 var sortColumnDir = Request.Form["order[0][dir]"].FirstOrDefault();
 
                 IQueryable<UserInfo> query = _context.UserInfo.Where(u => u.UserRole == "Admin");
+
+                // Filtering
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    query = query.Where(u =>
+                        u.UserName.Contains(searchValue) ||
+                        u.Email.Contains(searchValue) ||
+                        u.PhoneNumber.Contains(searchValue) ||
+                        u.Address.Contains(searchValue));
+                }
+
+                // Sorting
+                if (!string.IsNullOrEmpty(sortColumn) && !string.IsNullOrEmpty(sortColumnDir))
+                {
+                    switch (sortColumn)
+                    {
+                        case "userName":
+                            query = sortColumnDir == "asc" ? query.OrderBy(u => u.UserName) : query.OrderByDescending(u => u.UserName);
+                            break;
+                        case "email":
+                            query = sortColumnDir == "asc" ? query.OrderBy(u => u.Email) : query.OrderByDescending(u => u.Email);
+                            break;
+                        case "phoneNumber":
+                            query = sortColumnDir == "asc" ? query.OrderBy(u => u.PhoneNumber) : query.OrderByDescending(u => u.PhoneNumber);
+                            break;
+                        case "address":
+                            query = sortColumnDir == "asc" ? query.OrderBy(u => u.Address) : query.OrderByDescending(u => u.Address);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                // Paging
+                var recordsTotal = await query.CountAsync();
+                var data = await query.Skip(start).Take(length).ToListAsync();
+
+                var responseData = new
+                {
+                    draw = draw,
+                    recordsTotal = recordsTotal,
+                    recordsFiltered = recordsTotal,
+                    data = data.Select((u, index) => new
+                    {
+                        no = start + index + 1,
+                        userName = u.UserName,
+                        email = u.Email,
+                        phoneNumber = u.PhoneNumber,
+                        address = u.Address,
+                        userId = u.UserId,
+                    })
+                };
+
+                return Json(responseData);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest("Error loading data.");
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> LoadUser()
+        {
+            try
+            {
+                var draw = Request.Form["draw"].FirstOrDefault();
+                var start = Convert.ToInt32(Request.Form["start"].FirstOrDefault());
+                var length = Convert.ToInt32(Request.Form["length"].FirstOrDefault());
+                var searchValue = Request.Form["search[value]"].FirstOrDefault();
+                var sortColumn = Request.Form[$"columns[{Request.Form["order[0][column]"].FirstOrDefault()}][name]"].FirstOrDefault();
+                var sortColumnDir = Request.Form["order[0][dir]"].FirstOrDefault();
+
+                IQueryable<UserInfo> query = _context.UserInfo.Where(u => u.UserRole != "Admin");
 
                 // Filtering
                 if (!string.IsNullOrEmpty(searchValue))
@@ -326,12 +405,14 @@ namespace WholesaleDistributionApp.Controllers
         {
             try
             {
+                _logger.LogInformation("Attempting to delete user with ID: {UserId}", id);
                 var user = await _userManager.FindByIdAsync(id);
                 if (user == null)
                 {
                     return Json(new { success = false, message = "User not found." });
                 }
 
+                _logger.LogInformation("DELETING {UserId}", user);
                 var result = await _userManager.DeleteAsync(user);
                 if (result.Succeeded)
                 {
