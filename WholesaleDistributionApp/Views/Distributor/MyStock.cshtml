@@ -1,10 +1,10 @@
-﻿@model List<WholesaleDistributionApp.Models.WarehouseStock>
+﻿@model List<WholesaleDistributionApp.Models.DistributorStock>
 
 @{
-    ViewData["Title"] = "Stock Management";
+    ViewData["Title"] = "My Stock";
 }
 
-<input type="hidden" id="currentUrl" value="@Url.Action("StockManagement", "Admin")" />
+<input type="hidden" id="currentUrl" value="@Url.Action("MyStock", "Distributor")" />
 <div class="pc-content">
     <!-- Breadcrumb section -->
     <div class="page-header">
@@ -12,11 +12,11 @@
             <div class="row align-items-center">
                 <div class="col-md-12">
                     <div class="page-header-title">
-                        <h5 class="m-b-10">Stock Management</h5>
+                        <h5 class="m-b-10">My Stock</h5>
                     </div>
                     <ul class="breadcrumb">
                         <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
-                        <li class="breadcrumb-item" aria-current="page">Stock Management</li>
+                        <li class="breadcrumb-item" aria-current="page">My Stock</li>
                     </ul>
                 </div>
             </div>
@@ -28,13 +28,17 @@
         <div class="col-sm-12">
             <div class="card">
                 <!-- Top Bar -->
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title">Stock List</h5>
-                    <!-- Search Form -->
-                    <form asp-controller="Admin" asp-action="StockManagement" method="get" class="d-flex align-items-center mb-3">
-                        <input type="text" name="searchString" id="searchInput" class="form-control me-2" placeholder="Search Item Name" value="@ViewData["CurrentFilter"]">
-                        <button type="submit" class="btn btn-primary">Search</button>
-                    </form>
+                <div class="card-header">
+                    <h5 class="card-title">My Stock List</h5>
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <!-- Search Form -->
+                        <form asp-controller="Distributor" asp-action="StockManagement" method="get" class="d-flex align-items-center mb-3">
+                            <input type="text" name="searchString" id="searchInput" class="form-control me-2" placeholder="Search Item Name" value="@ViewData["CurrentFilter"]">
+                            <button type="submit" class="btn btn-primary">Search</button>
+                        </form>
+                        <!-- Add Stock Button -->
+                        <button type="button" class="btn btn-primary mb-4" data-bs-toggle="modal" data-bs-target="#addStockModal">Add New Stock</button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -47,7 +51,7 @@
                                     <th scope="col">Quantity</th>
                                     <th scope="col">Price per Item</th>
                                     <th scope="col">Distributor ID</th>
-                                    <th scope="col">Is Available</th>
+                                    <th scope="col">Delivery Status</th>
                                     <th scope="col">Actions</th>
                                 </tr>
                             </thead>
@@ -64,7 +68,7 @@
                                             <td>@stock.Quantity</td>
                                             <td>@stock.SinglePrice</td>
                                             <td>@stock.StockDistributorId</td>
-                                            <td>@stock.ForRetailerPurchase</td>
+                                            <td>@stock.DistributorDeliveryStatus</td>
                                             <td>
                                                 <div class="btn-group" role="group">
                                                     <button type="button" class="btn btn-primary btn-sm me-1 editStockBtn" data-stock-id="@stock.StockId">
@@ -83,7 +87,7 @@
                                 else
                                 {
                                     <tr>
-                                        <td colspan="9" class="text-center">Currently No Stock in Warehouse</td>
+                                        <td colspan="9" class="text-center">You currently don't have any Stock in the Warehouse</td>
                                     </tr>
                                 }
                             </tbody>
@@ -94,6 +98,44 @@
         </div>
     </div>
     <!-- End Main Content section -->
+</div>
+
+<!-- Add Stock Modal -->
+<div class="modal fade" id="addStockModal" tabindex="-1" aria-labelledby="addStockModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addStockModalLabel">Add Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addStockForm" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <div class="form-group">
+                        <label for="addImage" class="control-label">Upload Image</label>
+                        <input type="file" id="addImage" name="ImageFile" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label for="addItemName" class="control-label">Item Name</label>
+                        <input type="text" id="addItemName" name="ItemName" class="form-control" required placeholder="Enter Item Name" />
+                    </div>
+                    <div class="form-group">
+                        <label for="addDescription" class="control-label">Description</label>
+                        <textarea id="addDescription" name="Description" class="form-control" required placeholder="Enter Description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="addQuantity" class="control-label">Quantity</label>
+                        <input type="number" id="addQuantity" name="Quantity" class="form-control" required placeholder="Enter Quantity" />
+                    </div>
+                    <div class="form-group">
+                        <label for="addSinglePrice" class="control-label">Price per Item</label>
+                        <input type="text" id="addSinglePrice" name="SinglePrice" class="form-control" required placeholder="Enter Price per Item" />
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="addStock()">Add Stock</button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Edit Stock Modal -->
@@ -121,14 +163,19 @@
                         <textarea id="editDescription" name="Description" class="form-control" required placeholder="Enter Description"></textarea>
                     </div>
                     <div class="form-group">
+                        <label for="editQuantity" class="control-label">Quantity</label>
+                        <input type="number" id="editQuantity" name="Quantity" class="form-control" required placeholder="Enter Quantity" />
+                    </div>
+                    <div class="form-group">
                         <label for="editSinglePrice" class="control-label">Price per Item</label>
                         <input type="text" id="editSinglePrice" name="SinglePrice" class="form-control" required placeholder="Enter Price per Item" />
                     </div>
                     <div class="form-group">
-                        <label for="editForRetailerPurchase" class="control-label">Is Available for Retailer Purchase</label>
-                        <select id="editForRetailerPurchase" name="ForRetailerPurchase" class="form-control" required>
-                            <option value="true">Yes</option>
-                            <option value="false">No</option>
+                        <label for="editDistributorDeliveryStatus" class="control-label">Delivery Status for Distributor</label>
+                        <select id="editDistributorDeliveryStatus" name="DistributorDeliveryStatus" class="form-control" required>
+                            <option value="Ready for Acquisition">Ready for Acquisition</option>
+                            <option value="In Transit">In Transit</option>
+                            <option value="Pending">Pending</option>
                         </select>
                     </div>
                     <button type="button" class="btn btn-primary" onclick="editStock()">Save Changes</button>
@@ -184,7 +231,7 @@
     <script>
         function openStockDetailsModal(stockIdentifier) {
             $.ajax({
-                url: '/Admin/GetStockDetails',
+                url: '/Distributor/GetStockDetails',
                 type: 'GET',
                 data: { stockIdentifier: stockIdentifier },
                 success: function (response) {
@@ -214,7 +261,7 @@
             var formData = new FormData(form);
 
             $.ajax({
-                url: '@Url.Action("AddStock", "Admin")',
+                url: '@Url.Action("AddStock", "Distributor")',
                 enctype: 'multipart/form-data',
                 type: 'POST',
                 data: formData,
@@ -256,7 +303,7 @@
             }
 
             $.ajax({
-                url: '@Url.Action("UpdateStock", "Admin")',
+                url: '@Url.Action("UpdateStock", "Distributor")',
                 type: 'POST',
                 data: formData,
                 processData: false, // prevent jQuery from automatically transforming the data into a query string
@@ -289,7 +336,7 @@
             var stockId = $('#deleteStockId').val();
 
             $.ajax({
-                url: '@Url.Action("DeleteStock", "Admin")',
+                url: '@Url.Action("DeleteStock", "Distributor")',
                 type: 'POST',
                 data: {
                     stockId: stockId
@@ -315,7 +362,7 @@
 
         function populateEditModal(stockId) {
             $.ajax({
-                url: '@Url.Action("GetStockDetails", "Admin")',
+                url: '@Url.Action("GetStockDetails", "Distributor")',
                 type: 'GET',
                 data: { stockIdentifier: stockId },
                 success: function (data) {
@@ -323,9 +370,10 @@
                         $('#editStockId').val(data.stock.stockId);
                         $('#editItemName').val(data.stock.itemName);
                         $('#editDescription').val(data.stock.description);
+                        $('#editQuantity').val(data.stock.quantity);
                         $('#editSinglePrice').val(data.stock.singlePrice);
-                        $('#editImgDownloadURL').val(data.stock.imgDownloadURL); 
-                        $('#editForRetailerPurchase').val(data.stock.forRetailerPurchase.toString());
+                        $('#editImgDownloadURL').val(data.stock.imgDownloadURL);
+                        $('#editDistributorDeliveryStatus').val(data.stock.distributorDeliveryStatus);
                         $('#editStockModal').modal('show');
                     } else {
                         alert('Error fetching stock details: ' + data.message);

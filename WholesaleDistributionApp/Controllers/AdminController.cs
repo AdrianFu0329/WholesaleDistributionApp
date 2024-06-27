@@ -50,7 +50,7 @@ namespace WholesaleDistributionApp.Controllers
         public async Task<IActionResult> StockManagement(string searchString)
         {
             // Load Stocks
-            var stocks = _context.Stock.AsQueryable();
+            var stocks = _context.WarehouseStock.AsQueryable();
 
             if (!string.IsNullOrEmpty(searchString))
             {
@@ -60,6 +60,7 @@ namespace WholesaleDistributionApp.Controllers
             }
 
             return View(stocks.ToList());
+        }
 
         public IActionResult UserManagement()
         {
@@ -455,7 +456,9 @@ namespace WholesaleDistributionApp.Controllers
         }
 
         // Stock Management
-        [HttpPost]
+
+        // Not needed FOR NOW
+        /*[HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddStock(AddStockViewModel viewModel, IFormFile ImageFile)
         {
@@ -486,9 +489,10 @@ namespace WholesaleDistributionApp.Controllers
                         imgDownloadURL = $"/images/{fileName}";
                     }
 
-                    var stock = new Stock
+                    var stock = new WarehouseStock
                     {
                         StockId = Guid.NewGuid().ToString(),
+                        DistributorStockId = , // Need to set here when purchase complete
                         ItemName = viewModel.ItemName,
                         Description = viewModel.Description,
                         Quantity = viewModel.Quantity,
@@ -496,10 +500,9 @@ namespace WholesaleDistributionApp.Controllers
                         StockDistributorId = viewModel.StockDistributorId,
                         ImgDownloadURL = imgDownloadURL,
                         ForRetailerPurchase = viewModel.ForRetailerPurchase,
-                        DistributorDeliveryStatus = viewModel.DistributorDeliveryStatus
                     };
 
-                    _context.Stock.Add(stock);
+                    _context.WarehouseStock.Add(stock);
                     await _context.SaveChangesAsync();
                     return Json(new { success = true });
                 }
@@ -513,7 +516,7 @@ namespace WholesaleDistributionApp.Controllers
             // If ModelState is not valid, return the validation errors
             var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
             return Json(new { success = false, message = "Validation failed", errors });
-        }
+        }*/
 
         public async Task<IActionResult> GetStockDetails(string stockIdentifier)
         {
@@ -527,7 +530,7 @@ namespace WholesaleDistributionApp.Controllers
 
             stockIdentifier = stockIdentifier.ToLower(); // Convert to lower case for case-insensitive comparison
 
-            var stock = await _context.Stock.FirstOrDefaultAsync(s =>
+            var stock = await _context.WarehouseStock.FirstOrDefaultAsync(s =>
                 s.StockId.ToLower() == stockIdentifier ||
                 s.ItemName.ToLower() == stockIdentifier ||
                 s.StockDistributorId.ToLower() == stockIdentifier);
@@ -551,7 +554,7 @@ namespace WholesaleDistributionApp.Controllers
                 return Json(new { success = false, message = "Invalid stock data." });
             }
 
-            var stock = await _context.Stock.FindAsync(model.StockId);
+            var stock = await _context.WarehouseStock.FindAsync(model.StockId);
             if (stock == null)
             {
                 return Json(new { success = false, message = "Stock not found." });
@@ -560,11 +563,8 @@ namespace WholesaleDistributionApp.Controllers
             // Update stock details
             stock.ItemName = model.ItemName;
             stock.Description = model.Description;
-            stock.Quantity = model.Quantity;
             stock.SinglePrice = model.SinglePrice;
-            stock.StockDistributorId = model.StockDistributorId;
-            stock.ForRetailerPurchase = model.ForRetailerPurchase;
-            stock.DistributorDeliveryStatus = model.DistributorDeliveryStatus;
+            stock.ForRetailerPurchase = (bool)model.ForRetailerPurchase;
 
             try
             {
@@ -602,7 +602,7 @@ namespace WholesaleDistributionApp.Controllers
                     stock.ImgDownloadURL = imgDownloadURL;
                 }
 
-                _context.Stock.Update(stock);
+                _context.WarehouseStock.Update(stock);
                 await _context.SaveChangesAsync();
 
                 return Json(new { success = true });
@@ -616,7 +616,7 @@ namespace WholesaleDistributionApp.Controllers
 
         private bool StockExists(Guid id)
         {
-            return _context.Stock.Any(e => e.StockId.Equals(id));
+            return _context.WarehouseStock.Any(e => e.StockId.Equals(id));
         }
 
         [HttpPost]
@@ -628,13 +628,13 @@ namespace WholesaleDistributionApp.Controllers
                 return Json(new { success = false, message = "Invalid stock ID" });
             }
 
-            var stock = await _context.Stock.FindAsync(stockId);
+            var stock = await _context.WarehouseStock.FindAsync(stockId);
             if (stock == null)
             {
                 return Json(new { success = false, message = "Stock not found" });
             }
 
-            _context.Stock.Remove(stock);
+            _context.WarehouseStock.Remove(stock);
             await _context.SaveChangesAsync();
 
             return Json(new { success = true, message = "Stock deleted successfully" });

@@ -29,6 +29,8 @@ builder.Services.AddLogging(logging =>
     // Add other logging providers as needed (e.g., file logging, event log, etc.)
 });
 
+builder.Services.AddScoped<UserManager<WholesaleDistributionAppUser>>();
+
 var app = builder.Build();
 
 // Seed roles
