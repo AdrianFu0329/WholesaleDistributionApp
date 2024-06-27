@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -78,21 +78,19 @@
                     </li>
                     @if (User.IsInRole("Admin"))
                     {
-                                <li class="pc-item">
-                            <a class="pc-link" asp-controller="Admin" asp-action="AdminManagement">
-                                        <span class="pc-micon"><i class="ti ti-user"></i></span>
-                                        <span class="pc-mtext">Admin Management</span>
-                                    </a>
-                                </li>
-
                         <li class="pc-item">
-                            <a class="pc-link" asp-controller="Admin" asp-action="UserManagement">
+                            <a class="pc-link" asp-controller="Admin" asp-action="AdminManagement">
                                 <span class="pc-micon"><i class="ti ti-user"></i></span>
-                                <span class="pc-mtext">User Management</span>
+                                <span class="pc-mtext">Admin</span>
+                            </a>
+                        </li>
+                        <li class="pc-item">
+                            <a class="pc-link" asp-controller="Admin" asp-action="StockManagement">
+                                <span class="pc-micon"><i class="ti ti-truck"></i></span>
+                                <span class="pc-mtext">Stock</span>
                             </a>
                         </li>
                     }
-
                     <li class="pc-item">
                         <a href="#" class="pc-link">
                             <span class="pc-micon"><i class="ti ti-color-swatch"></i></span>

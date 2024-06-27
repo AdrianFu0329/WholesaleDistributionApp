@@ -15,6 +15,8 @@ builder.Services.AddDefaultIdentity<WholesaleDistributionAppUser>(options => opt
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+builder.Services.AddScoped<StockService>();
+builder.Services.AddScoped<FileService>();
 
 
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
