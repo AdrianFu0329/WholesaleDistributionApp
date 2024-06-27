@@ -32,7 +32,7 @@
                     <h5 class="card-title">My Stock List</h5>
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <!-- Search Form -->
-                        <form asp-controller="Distributor" asp-action="StockManagement" method="get" class="d-flex align-items-center mb-3">
+                        <form asp-controller="Distributor" asp-action="MyStock" method="get" class="d-flex align-items-center mb-3">
                             <input type="text" name="searchString" id="searchInput" class="form-control me-2" placeholder="Search Item Name" value="@ViewData["CurrentFilter"]">
                             <button type="submit" class="btn btn-primary">Search</button>
                         </form>

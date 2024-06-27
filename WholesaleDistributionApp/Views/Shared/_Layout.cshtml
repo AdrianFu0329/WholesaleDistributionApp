@@ -84,11 +84,24 @@
                                 <span class="pc-mtext">Admin</span>
                             </a>
                         </li>
-                        <li class="pc-item">
-                            <a class="pc-link" asp-controller="Admin" asp-action="StockManagement">
+                        <li class="pc-item pc-hasmenu">
+                            <a href="#!" class="pc-link">
                                 <span class="pc-micon"><i class="ti ti-truck"></i></span>
                                 <span class="pc-mtext">Stock</span>
+                                <span class="pc-arrow"><i data-feather="chevron-right"></i></span>
                             </a>
+                            <ul class="pc-submenu">
+                                <li class="pc-item">
+                                    <a class="pc-link" asp-controller="Admin" asp-action="StockManagement">
+                                        <span class="pc-mtext">Warehouse</span>
+                                    </a>
+                                </li>
+                                <li class="pc-item">
+                                    <a class="pc-link" asp-controller="Admin" asp-action="PurchaseStock">
+                                        <span class="pc-mtext">Purchase</span>
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                     }
                     @if (User.IsInRole("Distributor"))
