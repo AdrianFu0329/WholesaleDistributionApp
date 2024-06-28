@@ -1,10 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace WholesaleDistributionApp.Models
 {
-    public class Stock
+    public class DistributorStock
     {
         [Key]
         public string StockId { get; set; }
@@ -13,8 +11,7 @@ namespace WholesaleDistributionApp.Models
         public int Quantity { get; set; }
         public double SinglePrice { get; set; }
         public string StockDistributorId { get; set; }
-        public string? ImgDownloadURL {  get; set; }
-        public bool ForRetailerPurchase { get; set; }
+        public string? ImgDownloadURL { get; set; }
         public string DistributorDeliveryStatus { get; set; }
     }
 }

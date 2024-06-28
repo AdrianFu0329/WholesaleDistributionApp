@@ -13,14 +13,14 @@ public class StockService
         _context = context;
     }
 
-    public async Task<List<Stock>> GetAllStockAsync()
+    public async Task<List<WarehouseStock>> GetAllStockAsync()
     {
-        return await _context.Stock.ToListAsync();
+        return await _context.WarehouseStock.ToListAsync();
     }
 
-    public Stock GetStockById(string id)
+    public WarehouseStock GetStockById(string id)
     {
-        return _context.Stock.FirstOrDefault(s => s.StockId == id);
+        return _context.WarehouseStock.FirstOrDefault(s => s.StockId == id);
     }
 
     // Add more methods as needed for specific queries or CRUD operations

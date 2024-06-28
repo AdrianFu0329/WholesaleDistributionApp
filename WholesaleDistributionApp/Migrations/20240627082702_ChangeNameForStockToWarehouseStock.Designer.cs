@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WholesaleDistributionApp.Data;
 
@@ -11,9 +12,11 @@ using WholesaleDistributionApp.Data;
 namespace WholesaleDistributionApp.Migrations
 {
     [DbContext(typeof(WholesaleDistributionAppContext))]
-    partial class WholesaleDistributionAppContextModelSnapshot : ModelSnapshot
+    [Migration("20240627082702_ChangeNameForStockToWarehouseStock")]
+    partial class ChangeNameForStockToWarehouseStock
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -224,41 +227,6 @@ namespace WholesaleDistributionApp.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("WholesaleDistributionApp.Models.DistributorStock", b =>
-                {
-                    b.Property<string>("StockId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DistributorDeliveryStatus")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ImgDownloadURL")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ItemName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<double>("SinglePrice")
-                        .HasColumnType("float");
-
-                    b.Property<string>("StockDistributorId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("StockId");
-
-                    b.ToTable("DistributorStock");
-                });
-
             modelBuilder.Entity("WholesaleDistributionApp.Models.UserInfo", b =>
                 {
                     b.Property<string>("UserId")
@@ -300,7 +268,7 @@ namespace WholesaleDistributionApp.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("DistributorStockId")
+                    b.Property<string>("DistributorDeliveryStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
