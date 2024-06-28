@@ -41,6 +41,7 @@
                         <table id="stockTable" class="table table-bordered table-striped table-hover" style="width:100%">
                             <thead class="thead-light">
                                 <tr>
+                                    <th scope="col" style="width: 5%"><input type="checkbox" id="selectAll" /></th>
                                     <th scope="col" style="width: 5%">No</th>
                                     <th scope="col">Stock ID</th>
                                     <th scope="col">Stock Name</th>
@@ -57,8 +58,9 @@
                                     foreach (var stock in Model)
                                     {
                                         <tr>
+                                            <td><input type="checkbox" class="selectRow" data-stock-id="@stock.StockId" data-stock-name="@stock.ItemName" data-quantity="@stock.Quantity" data-price="@stock.SinglePrice" /></td>
                                             <td>@index</td>
-                                            <td type="button" class="btn btn-primary btn-sm me-1 viewDetailsBtn" data-stock-id="@stock.StockId">@stock.StockId</td>
+                                            <td type="button" class="btn btn-primary btn-sm me-1 w-100 viewDetailsBtn" data-stock-id="@stock.StockId">@stock.StockId</td>
                                             <td>@stock.ItemName</td>
                                             <td>@stock.Quantity</td>
                                             <td>@stock.SinglePrice</td>
@@ -76,6 +78,8 @@
                                 }
                             </tbody>
                         </table>
+
+                        <button id="confirmOrderBtn" class="btn btn-success mt-3">Confirm Order</button>
                     </div>
                 </div>
             </div>
@@ -103,10 +107,80 @@
         </div>
     </div>
 </div>
+<!-- Order Confirmation Modal -->
+<div class="modal fade" id="orderConfirmationModal" tabindex="-1" aria-labelledby="orderConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderConfirmationModalLabel">Confirm Order</h5>
+                <h5 class="modal-title" id="checkoutStockLabel" style="display: none;">Checkout Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table id="confirmationTable" class="table table-bordered table-striped table-hover" style="width:100%">
+                    <thead class="thead-light">
+                        <tr>
+                            <th scope="col"></th>
+                            <th scope="col">Stock ID</th>
+                            <th scope="col">Stock Name</th>
+                            <th scope="col">Quantity</th>
+                            <th scope="col">Price per Item</th>
+                            <th scope="col">Total (RM)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="5" class="text-end">Total Amount:</th>
+                            <th id="totalAmountCell">0.00</th>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <!-- Checkout content hidden initially -->
+                <div id="checkoutContent" style="display: none;">
+                    <div id="checkoutInvoice"></div>
+                    <hr>
+                    <!-- Payment method selection -->
+                    <div class="mb-3">
+                        <label for="paymentMethodSelect" class="form-label">Payment Method</label>
+                        <select class="form-select" id="paymentMethodSelect">
+                            <option value="" selected>-- Select Payment Method --</option>
+                            <option value="bankTransfer">Bank Account Transfer</option>
+                            <option value="qrCode">QR Code</option>
+                        </select>
+                    </div>
+                    <!-- Conditional payment information -->
+                    <div id="paymentInfo">
+                        <div id="bankTransferInfo" style="display: none; margin-bottom:20px">
+                            <p><strong>Bank Name:</strong> ABC Bank</p>
+                            <p><strong>Account Number:</strong> 1234567890</p>
+                            <p><strong>Account Holder:</strong> John Doe</p>
+                        </div>
+                        <div id="qrCodeInfo" style="display: none; margin-bottom:20px">
+                            <img id="qrCodeImg" src="~/assets/images/user/avatar-2.jpg" alt="QR Code" style="max-width: 100%;">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="proofOfPayment" class="form-label">Upload Proof of Payment</label>
+                        <input class="form-control" type="file" id="proofOfPayment">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="proceedBtn">Proceed</button>
+                <button type="button" class="btn btn-success" id="submitOrderBtn" style="display: none;">Pay Now</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+@*     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> *@
     <script>
         function openStockDetailsModal(stockIdentifier) {
             console.log('Opening modal for stockIdentifier:', stockIdentifier); // Added console log
@@ -151,6 +225,230 @@
                 var stockId = $(this).data('stock-id');
                 openStockDetailsModal(stockId);
             });
+
+            // Select/Deselect all rows
+            $('#selectAll').on('change', function () {
+                $('.selectRow').prop('checked', this.checked);
+            });
+
+            // Show order confirmation modal
+            $('#confirmOrderBtn').on('click', function () {
+                var selectedStocks = [];
+                $('.selectRow:checked').each(function () {
+                    var stockId = $(this).data('stock-id');
+                    var stockName = $(this).data('stock-name');
+                    var quantity = $(this).data('quantity');
+                    var price = $(this).data('price');
+                    var total = quantity * price;
+                    selectedStocks.push({ stockId, stockName, quantity, price, total });
+                });
+
+                var confirmationTableBody = $('#confirmationTable tbody');
+                confirmationTableBody.empty();
+
+                selectedStocks.forEach(function (stock) {
+                    var row = `<tr>
+                            <td><input type="checkbox" class="selectOrderRow" data-stock-id="${stock.stockId}" checked /></td>
+                            <td>${stock.stockId}</td>
+                            <td>${stock.stockName}</td>
+                            <td><input type="number" class="form-control quantityInput" data-stock-id="${stock.stockId}" value="${stock.quantity}" min="1" max="${stock.quantity}" /></td>
+                            <td>${stock.price}</td>
+                            <td class="totalCell">${stock.total}</td>
+                        </tr>`;
+                    confirmationTableBody.append(row);
+                });
+
+                $('#orderConfirmationModal').modal('show');
+                updateTotalAmount();
+            });
+
+
+            // Update total when quantity changes
+            $('#confirmationTable').on('input', '.quantityInput', function () {
+                var row = $(this).closest('tr');
+                var price = parseFloat(row.find('td:eq(4)').text());
+                var quantity = parseInt($(this).val());
+
+                var total = price * quantity;
+                row.find('.totalCell').text(total.toFixed(2));
+                updateTotalAmount();
+            });
+
+            $('#confirmationTable').on('change', '#selectAllOrders', function () {
+                $('.selectOrderRow').prop('checked', this.checked);
+            });
+
+            function updateTotalAmount() {
+                var total = 0;
+                $('#confirmationTable tbody tr').each(function () {
+                    var subtotal = parseFloat($(this).find('.totalCell').text());
+                    total += subtotal;
+                });
+                $('#totalAmountCell').text(total.toFixed(2));
+            }
+
+            $('#confirmationTable').on('change', '.selectOrderRow', function () {
+                var isChecked = $(this).prop('checked');
+                if (!isChecked) {
+                    $(this).closest('tr').remove();
+                    updateTotalAmount();
+                }
+            });
+
+            // Payment method selection change event
+            $('#paymentMethodSelect').on('change', function () {
+                var selectedMethod = $(this).val();
+                if (selectedMethod === 'bankTransfer') {
+                    $('#bankTransferInfo').show();
+                    $('#qrCodeInfo').hide();
+                } else if (selectedMethod === 'qrCode') {
+                    $('#bankTransferInfo').hide();
+                    $('#qrCodeInfo').show();
+                } else {
+                    $('#bankTransferInfo').hide();
+                    $('#qrCodeInfo').hide();
+                }
+            });
+
+            //proceed button
+            $('#proceedBtn').on('click', function () {
+                // Hide the table and show checkout content
+                $('#confirmationTable').hide();
+                $('#proceedBtn').hide();
+                $('#orderConfirmationModalLabel').hide();
+                $('#checkoutStockLabel').show();
+                $('#checkoutContent').show();
+
+                // Toggle modal size based on checkout state
+                if ($('#checkoutContent').is(':visible')) {
+                    $('#orderConfirmationModal .modal-dialog').removeClass('modal-dialog-centered').addClass('modal-fullscreen');
+                } else {
+                    $('#orderConfirmationModal .modal-dialog').removeClass('modal-fullscreen').addClass('modal-dialog-centered');
+                }
+
+                // Generate the invoice-like format
+                var invoiceHtml = generateInvoiceHtml();
+                $('#checkoutInvoice').html(invoiceHtml);
+
+                // Show the "Pay Now" button
+                $('#submitOrderBtn').show();
+            });
+
+            function generateInvoiceHtml() {
+                var invoiceHtml = '<h5>Invoice</h5>';
+                invoiceHtml += '<table class="table table-bordered table-striped">';
+                invoiceHtml += '<thead><tr><th>Stock Name</th><th>Quantity</th><th>Price per Item</th><th>Total</th></tr></thead>';
+                invoiceHtml += '<tbody>';
+
+                // Loop through selected stocks to create rows in the invoice
+                $('#confirmationTable tbody tr').each(function () {
+                    var stockName = $(this).find('td:eq(2)').text();
+                    var quantity = $(this).find('.quantityInput').val();
+                    var price = $(this).find('td:eq(4)').text();
+                    var total = $(this).find('.totalCell').text();
+
+                    invoiceHtml += '<tr>';
+                    invoiceHtml += '<td>' + stockName + '</td>';
+                    invoiceHtml += '<td>' + quantity + '</td>';
+                    invoiceHtml += '<td>' + price + '</td>';
+                    invoiceHtml += '<td>' + total + '</td>';
+                    invoiceHtml += '</tr>';
+                });
+
+                invoiceHtml += '</tbody>';
+                invoiceHtml += '<tfoot>';
+                invoiceHtml += '<tr><th colspan="3">Total Amount:</th><td id="invoiceTotalAmountCell">' + $('#totalAmountCell').text() + '</td></tr>';
+                invoiceHtml += '</tfoot>';
+                invoiceHtml += '</table>';
+
+                return invoiceHtml;
+            }
+
+            // Submit order
+            $('#submitOrderBtn').on('click', function () {
+                var orderDetails = [];
+                var valid = true;
+
+                $('#confirmationTable tbody tr').each(function () {
+                    var stockId = $(this).find('.quantityInput').data('stock-id');
+                    var quantity = parseInt($(this).find('.quantityInput').val());
+                    var pricePerItem = parseFloat($(this).find('td:eq(4)').text());
+                    var subtotal = parseFloat($(this).find('.totalCell').text());
+
+                    if (quantity <= 0) {
+                        alert('Quantity must be greater than 0.');
+                        valid = false;
+                        return false; // Exit the loop if invalid quantity is found
+                    }
+
+                    orderDetails.push({ stockId, quantity, pricePerItem, subtotal });
+                });
+
+                if (!valid) {
+                    return;
+                }
+
+                var proofOfPaymentFile = $('#proofOfPayment')[0].files[0];
+                if (!proofOfPaymentFile) {
+                    alert('Please upload proof of payment.');
+                    return;
+                }
+
+                var allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
+                var fileExtension = proofOfPaymentFile.name.split('.').pop().toLowerCase();
+                if ($.inArray(fileExtension, allowedExtensions) === -1) {
+                    alert('Invalid file type. Only JPG, JPEG, PNG, and PDF files are allowed.');
+                    return;
+                }
+
+                if (proofOfPaymentFile.size > 5 * 1024 * 1024) { // 5MB size limit
+                    alert('File size exceeds 5MB limit.');
+                    return;
+                }
+
+                var formData = new FormData();
+                formData.append('orderDetails', JSON.stringify(orderDetails));
+                formData.append('proofOfPayment', proofOfPaymentFile);
+
+                $.ajax({
+                    url: '/Admin/SubmitOrder',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        if (response.success) {
+                            alert('Order submitted successfully!');
+                            location.reload();
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function () {
+                        alert('An error occurred while submitting the order.');
+                    }
+                });
+            });
+
+
+
+
+            // Reset modal state when closed
+            $('#orderConfirmationModal').on('hidden.bs.modal', function () {
+                // Clear modal content
+                $('#orderConfirmationModalLabel').show();
+                $('#checkoutStockLabel').hide();
+                $('#checkoutContent').hide();
+                $('#confirmationTable').show();
+                $('#proceedBtn').show();
+                $('#submitOrderBtn').hide();
+                $('#orderConfirmationModal .modal-dialog').removeClass('modal-fullscreen').addClass('modal-dialog-centered');
+                $('#paymentMethodSelect').val('');
+                $('#bankTransferInfo').hide();
+                $('#qrCodeInfo').hide();
+                $('#proofOfPayment').val('');
+            });
+
         });
     </script>
 }
