@@ -59,7 +59,7 @@
                                     {
                                         <tr>
                                             <td>@index</td>
-                                            <td type="button" class="btn btn-primary btn-sm me-1 viewDetailsBtn" data-stock-id="@stock.StockId">@stock.StockId</td>
+                                            <td type="button" class="btn btn-primary btn-sm me-1 w-100 viewDetailsBtn" data-stock-id="@stock.StockId">@stock.StockId</td>
                                             <td>@stock.ItemName</td>
                                             <td>@stock.Quantity</td>
                                             <td>@stock.SinglePrice</td>
@@ -179,8 +179,8 @@
 </div>
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+@*     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> *@
     <script>
         function openStockDetailsModal(stockIdentifier) {
             $.ajax({
