@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -68,8 +68,9 @@ namespace WholesaleDistributionApp.Controllers
         public IActionResult PurchaseStock(string searchString)
         {
             // Load Distributor Stocks for Admin Purchase
-            var stocks = _context.DistributorStock.AsQueryable();
-
+            var stocks = _context.DistributorStock
+                                 .Include(s => s.Distributor)
+                                 .AsQueryable();
             if (!string.IsNullOrEmpty(searchString))
             {
                 stocks = stocks.Where(s => s.ItemName.Contains(searchString) ||
@@ -736,7 +737,8 @@ namespace WholesaleDistributionApp.Controllers
                 WarehouseId = userId,
                 TotalAmount = orderDetailsList.Sum(od => od.Subtotal),
                 OrderStatus = "Pending",
-                PaymentReceiptURL = ""
+                PaymentReceiptURL = "",
+                StockDistributorId = "",
             };
 
             var fileName = Path.GetFileName(proofOfPayment.FileName);
@@ -766,6 +768,7 @@ namespace WholesaleDistributionApp.Controllers
             {
                 detail.OrderId = order.OrderId;
                 _context.OrderDetails.Add(detail);
+                order.StockDistributorId = detail.StockDistributorId;
             }
 
             await _context.SaveChangesAsync();

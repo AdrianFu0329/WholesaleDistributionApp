@@ -11,5 +11,6 @@ namespace WholesaleDistributionApp.Models
         public int Quantity { get; set; }
         public double PricePerItem { get; set; }
         public double Subtotal { get; set; }
+        public string StockDistributorId { get; set; }
     }
 }
