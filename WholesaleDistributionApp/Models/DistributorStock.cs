@@ -13,5 +13,7 @@ namespace WholesaleDistributionApp.Models
         public string StockDistributorId { get; set; }
         public string? ImgDownloadURL { get; set; }
         public string DistributorDeliveryStatus { get; set; }
+
+        public virtual UserInfo Distributor { get; set; }
     }
 }

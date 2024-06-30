@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
 using WholesaleDistributionApp.Areas.Identity.Data;
 using WholesaleDistributionApp.Models;
 
@@ -25,5 +26,12 @@ public class WholesaleDistributionAppContext : IdentityDbContext<WholesaleDistri
         // Customize the ASP.NET Identity model and override the defaults if needed.
         // For example, you can rename the ASP.NET Identity table names and more.
         // Add your customizations after calling base.OnModelCreating(builder);
+
+        //join relationship between Distributor and UserInfo
+        builder.Entity<DistributorStock>()
+                    .HasOne(s => s.Distributor)
+                    .WithMany()
+                    .HasForeignKey(s => s.StockDistributorId)
+                    .HasPrincipalKey(d => d.UserId);
     }
 }

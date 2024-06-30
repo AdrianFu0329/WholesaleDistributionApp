@@ -47,7 +47,8 @@
                                     <th scope="col">Stock Name</th>
                                     <th scope="col">Quantity</th>
                                     <th scope="col">Price per Item</th>
-                                    <th scope="col">Distributor ID</th>
+                                    <th style="display: none;" scope="col">Distributor ID</th>
+                                    <th scope="col">Distributor</th>
                                     <th scope="col">Delivery Status</th>
                                 </tr>
                             </thead>
@@ -58,13 +59,14 @@
                                     foreach (var stock in Model)
                                     {
                                         <tr>
-                                            <td><input type="checkbox" class="selectRow" data-stock-id="@stock.StockId" data-stock-name="@stock.ItemName" data-quantity="@stock.Quantity" data-price="@stock.SinglePrice" /></td>
+                                            <td><input type="checkbox" class="selectRow" data-stock-id="@stock.StockId" data-stock-name="@stock.ItemName" data-quantity="@stock.Quantity" data-price="@stock.SinglePrice" data-distributor-id="@stock.StockDistributorId" data-distributor-name="@stock.Distributor?.UserName" /></td>
                                             <td>@index</td>
-                                            <td type="button" class="btn btn-primary btn-sm me-1 w-100 viewDetailsBtn" data-stock-id="@stock.StockId">@stock.StockId</td>
+                                            <td type="button" class="btn btn-primary btn-sm w-100 viewDetailsBtn" data-stock-id="@stock.StockId">@stock.StockId</td>
                                             <td>@stock.ItemName</td>
                                             <td>@stock.Quantity</td>
                                             <td>@stock.SinglePrice</td>
-                                            <td>@stock.StockDistributorId</td>
+                                            <td style="display: none;">@stock.StockDistributorId</td>
+                                            <td>@stock.Distributor?.UserName</td>
                                             <td>@stock.DistributorDeliveryStatus</td>
                                         </tr>
                                         index++;
@@ -125,6 +127,7 @@
                             <th scope="col">Stock Name</th>
                             <th scope="col">Quantity</th>
                             <th scope="col">Price per Item</th>
+                            <th scope="col">Distributor</th>
                             <th scope="col">Total (RM)</th>
                         </tr>
                     </thead>
@@ -132,7 +135,7 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <th colspan="5" class="text-end">Total Amount:</th>
+                            <th colspan="6" class="text-end">Total Amount:</th>
                             <th id="totalAmountCell">0.00</th>
                         </tr>
                     </tfoot>
@@ -143,16 +146,16 @@
                     <div id="checkoutInvoice"></div>
                     <hr>
                     <!-- Payment method selection -->
-                    <div class="mb-3">
+@*                     <div class="mb-3">
                         <label for="paymentMethodSelect" class="form-label">Payment Method</label>
                         <select class="form-select" id="paymentMethodSelect">
                             <option value="" selected>-- Select Payment Method --</option>
                             <option value="bankTransfer">Bank Account Transfer</option>
                             <option value="qrCode">QR Code</option>
                         </select>
-                    </div>
+                    </div> *@
                     <!-- Conditional payment information -->
-                    <div id="paymentInfo">
+@*                     <div id="paymentInfo">
                         <div id="bankTransferInfo" style="display: none; margin-bottom:20px">
                             <p><strong>Bank Name:</strong> ABC Bank</p>
                             <p><strong>Account Number:</strong> 1234567890</p>
@@ -161,11 +164,11 @@
                         <div id="qrCodeInfo" style="display: none; margin-bottom:20px">
                             <img id="qrCodeImg" src="~/assets/images/user/avatar-2.jpg" alt="QR Code" style="max-width: 100%;">
                         </div>
-                    </div>
-                    <div class="mb-3">
+                    </div> *@
+@*                     <div class="mb-3">
                         <label for="proofOfPayment" class="form-label">Upload Proof of Payment</label>
                         <input class="form-control" type="file" id="proofOfPayment">
-                    </div>
+                    </div> *@
                 </div>
             </div>
             <div class="modal-footer">
@@ -239,9 +242,17 @@
                     var stockName = $(this).data('stock-name');
                     var quantity = $(this).data('quantity');
                     var price = $(this).data('price');
+                    var StockDistributorId = $(this).data('distributor-id');
+                    var StockDistributorName = $(this).data('distributor-name');
                     var total = quantity * price;
-                    selectedStocks.push({ stockId, stockName, quantity, price, total });
+                    selectedStocks.push({ stockId, stockName, quantity, price, total, StockDistributorId, StockDistributorName });
                 });
+
+                // Check if no items are selected
+                if (selectedStocks.length === 0) {
+                    alert('No items selected for checkout.');
+                    return; // Prevent the modal from being shown
+                }
 
                 var confirmationTableBody = $('#confirmationTable tbody');
                 confirmationTableBody.empty();
@@ -253,6 +264,8 @@
                             <td>${stock.stockName}</td>
                             <td><input type="number" class="form-control quantityInput" data-stock-id="${stock.stockId}" value="${stock.quantity}" min="1" max="${stock.quantity}" /></td>
                             <td>${stock.price}</td>
+                            <td>${stock.StockDistributorName}</td>
+                            <td style="display: none;">${stock.StockDistributorId}</td>
                             <td class="totalCell">${stock.total}</td>
                         </tr>`;
                     confirmationTableBody.append(row);
@@ -265,6 +278,15 @@
 
             // Update total when quantity changes
             $('#confirmationTable').on('input', '.quantityInput', function () {
+                //to check if user manual enter value exceeds the quantity
+                var $this = $(this);
+                var maxQuantity = parseInt($this.attr('max'));
+                var enteredQuantity = parseInt($this.val());
+
+                if (enteredQuantity > maxQuantity) {
+                    $this.val(maxQuantity); // Reset to max quantity
+                    alert('Entered quantity exceeds available stock. Resetting to maximum allowed.');
+                }
                 var row = $(this).closest('tr');
                 var price = parseFloat(row.find('td:eq(4)').text());
                 var quantity = parseInt($(this).val());
@@ -296,17 +318,21 @@
             });
 
             // Payment method selection change event
-            $('#paymentMethodSelect').on('change', function () {
+            $(document).on('change', '.paymentMethodSelect', function () {
                 var selectedMethod = $(this).val();
+                var distributorId = $(this).attr('id').split('_')[1]; // Extract distributorId from id attribute
+                var $bankTransferInfo = $('#bankTransferInfo_' + distributorId);
+                var $qrCodeInfo = $('#qrCodeInfo_' + distributorId);
+
                 if (selectedMethod === 'bankTransfer') {
-                    $('#bankTransferInfo').show();
-                    $('#qrCodeInfo').hide();
+                    $bankTransferInfo.show();
+                    $qrCodeInfo.hide();
                 } else if (selectedMethod === 'qrCode') {
-                    $('#bankTransferInfo').hide();
-                    $('#qrCodeInfo').show();
+                    $bankTransferInfo.hide();
+                    $qrCodeInfo.show();
                 } else {
-                    $('#bankTransferInfo').hide();
-                    $('#qrCodeInfo').hide();
+                    $bankTransferInfo.hide();
+                    $qrCodeInfo.hide();
                 }
             });
 
@@ -335,41 +361,98 @@
             });
 
             function generateInvoiceHtml() {
-                var invoiceHtml = '<h5>Invoice</h5>';
-                invoiceHtml += '<table class="table table-bordered table-striped">';
-                invoiceHtml += '<thead><tr><th>Stock Name</th><th>Quantity</th><th>Price per Item</th><th>Total</th></tr></thead>';
-                invoiceHtml += '<tbody>';
+                var groupedStocks = {};
 
-                // Loop through selected stocks to create rows in the invoice
+                // Group stocks by distributor ID
                 $('#confirmationTable tbody tr').each(function () {
+                    var distributorId = $(this).find('td:eq(6)').text();
+                    var distributorName = $(this).find('td:eq(5)').text();
                     var stockName = $(this).find('td:eq(2)').text();
                     var quantity = $(this).find('.quantityInput').val();
                     var price = $(this).find('td:eq(4)').text();
                     var total = $(this).find('.totalCell').text();
 
-                    invoiceHtml += '<tr>';
-                    invoiceHtml += '<td>' + stockName + '</td>';
-                    invoiceHtml += '<td>' + quantity + '</td>';
-                    invoiceHtml += '<td>' + price + '</td>';
-                    invoiceHtml += '<td>' + total + '</td>';
-                    invoiceHtml += '</tr>';
+                    if (!groupedStocks[distributorId]) {
+                        groupedStocks[distributorId] = [];
+                    }
+                    groupedStocks[distributorId].push({ distributorName, stockName, quantity, price, total });
                 });
 
-                invoiceHtml += '</tbody>';
-                invoiceHtml += '<tfoot>';
-                invoiceHtml += '<tr><th colspan="3">Total Amount:</th><td id="invoiceTotalAmountCell">' + $('#totalAmountCell').text() + '</td></tr>';
-                invoiceHtml += '</tfoot>';
-                invoiceHtml += '</table>';
+                var invoiceHtml = '';
+                for (var distributorId in groupedStocks) {
+
+                    var distributorName = groupedStocks[distributorId][0].distributorName;
+
+                    invoiceHtml += '<hr/>';
+                    invoiceHtml += '<h5>Invoice for Distributor: ' + distributorName + '</h5>';
+                    invoiceHtml += '<hr/>';
+                    invoiceHtml += '<table class="table table-bordered table-striped">';
+                    invoiceHtml += '<thead><tr><th>Stock Name</th><th>Quantity</th><th>Price per Item</th><th>Total</th></tr></thead>';
+                    invoiceHtml += '<tbody>';
+
+                    var totalAmount = 0;
+                    groupedStocks[distributorId].forEach(function (stock) {
+                        invoiceHtml += '<tr>';
+                        invoiceHtml += '<td>' + stock.stockName + '</td>';
+                        invoiceHtml += '<td>' + stock.quantity + '</td>';
+                        invoiceHtml += '<td>' + stock.price + '</td>';
+                        invoiceHtml += '<td>' + stock.total + '</td>';
+                        invoiceHtml += '</tr>';
+                        totalAmount += parseFloat(stock.total);
+                    });
+
+                    invoiceHtml += '</tbody>';
+                    invoiceHtml += '<tfoot>';
+                    invoiceHtml += '<tr><th colspan="3">Total Amount:</th><td>' + totalAmount.toFixed(2) + '</td></tr>';
+                    invoiceHtml += '</tfoot>';
+                    invoiceHtml += '</table>';
+
+                    // Payment method selection and proof of payment upload
+                    invoiceHtml += '<div class="mb-4">';
+                    invoiceHtml += '    <label for="paymentMethodSelect_' + distributorId + '" class="form-label"> Payment Method </label>';
+                    invoiceHtml += '    <select class="form-select paymentMethodSelect" id="paymentMethodSelect_' + distributorId + '">';
+                    invoiceHtml += '        <option value="" selected> --Select Payment Method-- </option>';
+                    invoiceHtml += '        <option value="bankTransfer"> Bank Account Transfer </option>';
+                    invoiceHtml += '        <option value="qrCode"> QR Code </option>';
+                    invoiceHtml += '    </select>';
+                    invoiceHtml += '</div>';
+
+                    invoiceHtml += '<div id="bankTransferInfo_' + distributorId + '" class="paymentInfo" style="display:none; margin-bottom:20px">';
+                    invoiceHtml += '    <p><strong>Bank Name: </strong> ABC Bank</p>';
+                    invoiceHtml += '    <p><strong>Account Number: </strong> 1234567890</p>';
+                    invoiceHtml += '    <p><strong>Account Holder: </strong> John Doe</p>';
+                    invoiceHtml += '</div>';
+
+                    invoiceHtml += '<div id="qrCodeInfo_' + distributorId + '" class="paymentInfo" style="display:none; margin-bottom:20px">';
+                    invoiceHtml += '    <img id="qrCodeImg_' + distributorId + '" src="../assets/images/user/avatar-2.jpg" alt="QR Code" style="max-width:100%;">';
+                    invoiceHtml += '</div>';
+
+                    invoiceHtml += '<div class="mb-4">';
+                    invoiceHtml += '    <label for="proofOfPayment_' + distributorId + '" class="form-label">Upload Proof of Payment for Distributor: ' + distributorName + '</label>';
+                    invoiceHtml += '    <input class="form-control proofOfPayment" type="file" id="proofOfPayment_' + distributorId + '">';
+                    invoiceHtml += '</div>';
+                    invoiceHtml += '</br>';
+                }
 
                 return invoiceHtml;
             }
 
+            function calculateTotalAmount(stocks) {
+                var totalAmount = 0;
+                stocks.forEach(function (stock) {
+                    totalAmount += parseFloat(stock.total);
+                });
+                return totalAmount.toFixed(2);
+            }
+
             // Submit order
             $('#submitOrderBtn').on('click', function () {
-                var orderDetails = [];
+                var groupedOrderDetails = {};
                 var valid = true;
 
                 $('#confirmationTable tbody tr').each(function () {
+                    var stockDistributorId = $(this).find('td:eq(6)').text();
+                    var stockDistributorName = $(this).find('td:eq(5)').text();
                     var stockId = $(this).find('.quantityInput').data('stock-id');
                     var quantity = parseInt($(this).find('.quantityInput').val());
                     var pricePerItem = parseFloat($(this).find('td:eq(4)').text());
@@ -381,52 +464,83 @@
                         return false; // Exit the loop if invalid quantity is found
                     }
 
-                    orderDetails.push({ stockId, quantity, pricePerItem, subtotal });
+                    var $quantityInput = $(this).find('.quantityInput');
+                    var maxQuantity = parseInt($quantityInput.attr('max'));
+                    var enteredQuantity = parseInt($quantityInput.val());
+
+                    if (enteredQuantity > maxQuantity) {
+                        valid = false;
+                        alert('One or more quantities exceed available stock. Please correct them before proceeding.');
+                        return false; // Exit the loop
+                    }
+
+                    if (!groupedOrderDetails[stockDistributorId]) {
+                        groupedOrderDetails[stockDistributorId] = [];
+                    }
+                    groupedOrderDetails[stockDistributorId].push({ stockId, quantity, pricePerItem, subtotal, stockDistributorId, stockDistributorName });
                 });
 
                 if (!valid) {
                     return;
                 }
 
-                var proofOfPaymentFile = $('#proofOfPayment')[0].files[0];
-                if (!proofOfPaymentFile) {
-                    alert('Please upload proof of payment.');
-                    return;
-                }
+                var formDataList = [];
+                for (var stockDistributorId in groupedOrderDetails) {
+                    var proofOfPaymentFile = $('#proofOfPayment_' + stockDistributorId)[0].files[0];
+                    var stockDistributorName = groupedOrderDetails[stockDistributorId][0].stockDistributorName; // Accessing stockDistributorName from the first element
 
-                var allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
-                var fileExtension = proofOfPaymentFile.name.split('.').pop().toLowerCase();
-                if ($.inArray(fileExtension, allowedExtensions) === -1) {
-                    alert('Invalid file type. Only JPG, JPEG, PNG, and PDF files are allowed.');
-                    return;
-                }
-
-                if (proofOfPaymentFile.size > 5 * 1024 * 1024) { // 5MB size limit
-                    alert('File size exceeds 5MB limit.');
-                    return;
-                }
-
-                var formData = new FormData();
-                formData.append('orderDetails', JSON.stringify(orderDetails));
-                formData.append('proofOfPayment', proofOfPaymentFile);
-
-                $.ajax({
-                    url: '/Admin/SubmitOrder',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function (response) {
-                        if (response.success) {
-                            alert('Order submitted successfully!');
-                            location.reload();
-                        } else {
-                            alert(response.message);
-                        }
-                    },
-                    error: function () {
-                        alert('An error occurred while submitting the order.');
+                    if (!proofOfPaymentFile) {
+                        alert('Please upload proof of payment for Distributor: ' + stockDistributorName);
+                        return;
                     }
+
+                    var allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
+                    var fileExtension = proofOfPaymentFile.name.split('.').pop().toLowerCase();
+                    if ($.inArray(fileExtension, allowedExtensions) === -1) {
+                        alert('Invalid file type for Distributor ' + stockDistributorId + '. Only JPG, JPEG, PNG, and PDF files are allowed.');
+                        return;
+                    }
+
+                    if (proofOfPaymentFile.size > 5 * 1024 * 1024) { // 5MB size limit
+                        alert('File size exceeds 5MB limit for Distributor ' + stockDistributorName);
+                        return;
+                    }
+
+                    var formData = new FormData();
+                    formData.append('orderDetails', JSON.stringify(groupedOrderDetails[stockDistributorId]));
+                    formData.append('proofOfPayment', proofOfPaymentFile);
+                    formData.append('stockDistributorName', stockDistributorName);
+                    formDataList.push({ formData, stockDistributorName });
+                }
+
+                var successfulOrders = 0;
+
+                formDataList.forEach(function (item) {
+                    var formData = item.formData;
+                    var stockDistributorName = item.stockDistributorName;
+
+                    $.ajax({
+                        url: '/Admin/SubmitOrder',
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function (response) {
+                            if (response.success) {
+                                successfulOrders++;
+                                alert('Order submitted successfully for Distributor: ' + stockDistributorName);
+
+                                if (successfulOrders === formDataList.length) { // If all orders are successful, reload the page
+                                    location.reload();
+                                }
+                            } else {
+                                alert(response.message);
+                            }
+                        },
+                        error: function () {
+                            alert('An error occurred while submitting the order.');
+                        }
+                    });
                 });
             });
 
