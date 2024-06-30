@@ -250,7 +250,7 @@ namespace WholesaleDistributionApp.Controllers
 
             // Load Stocks for the current Distributor
             var orders = _context.Orders
-                                 //.Where(s => s.StockDistributorId == userId)
+                                 .Where(s => s.StockDistributorId == userId)
                                  .AsQueryable();
 
             //if (!string.IsNullOrEmpty(searchString))
@@ -262,5 +262,71 @@ namespace WholesaleDistributionApp.Controllers
             return View(orders.ToList());
         }
 
+        public async Task<IActionResult> GetOrderDetails(string orderIdentifier)
+        {
+            _logger.LogInformation($"GetOrderDetails called with orderIdentifier: {orderIdentifier}");
+
+            if (string.IsNullOrEmpty(orderIdentifier))
+            {
+                _logger.LogWarning("Order identifier is required but was not provided.");
+                return Json(new { success = false, message = "Order identifier is required." });
+            }
+
+            orderIdentifier = orderIdentifier.ToLower();
+
+            var orders = await _context.OrderDetails
+                .Include(od => od.DistributorStock)
+                .Where(od => od.OrderId.ToString().ToLower() == orderIdentifier)
+                .ToListAsync();
+
+            if (orders == null || !orders.Any())
+            {
+                _logger.LogWarning($"Order not found for orderIdentifier: {orderIdentifier}");
+                return Json(new { success = false, message = "Order not found." });
+            }
+
+            var orderDetails = orders.Select(order => new
+            {
+                order.OrderId,
+                order.OrderDetailsId,
+                order.StockId,
+                StockName = order.DistributorStock != null ? order.DistributorStock.ItemName : "Stock Name Not Available",
+                StockImage = order.DistributorStock != null ? order.DistributorStock.ImgDownloadURL : null,
+                order.Quantity,
+                order.Subtotal
+            }).ToList();
+
+            _logger.LogInformation($"Order details retrieved successfully for orderIdentifier: {orderIdentifier}");
+            return Json(new { success = true, orderDetails });
+        }
+
+        [HttpPost]
+        public IActionResult UpdateOrderStatus(int orderId, string status)
+        {
+            try
+            {
+                // Retrieve the order from the database based on orderId
+                var orderToUpdate = _context.Orders.FirstOrDefault(o => o.OrderId == orderId);
+
+                if (orderToUpdate != null)
+                {
+                    // Update the order status
+                    orderToUpdate.OrderStatus = status;
+
+                    // Save changes to the database
+                    _context.SaveChanges();
+
+                    return Json(new { success = true });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Order not found." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
     }
 }
