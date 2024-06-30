@@ -237,5 +237,30 @@ namespace WholesaleDistributionApp.Controllers
 
             return Json(new { success = true, message = "Stock deleted successfully" });
         }
+
+        public async Task<IActionResult> OrderManagement()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var userId = user!.Id;
+
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            // Load Stocks for the current Distributor
+            var orders = _context.Orders
+                                 //.Where(s => s.StockDistributorId == userId)
+                                 .AsQueryable();
+
+            //if (!string.IsNullOrEmpty(searchString))
+            //{
+              //  orders= orders.Where(s => s.ItemName.Contains(searchString) ||
+               //                            s.Description.Contains(searchString));
+            //}
+
+            return View(orders.ToList());
+        }
+
     }
 }

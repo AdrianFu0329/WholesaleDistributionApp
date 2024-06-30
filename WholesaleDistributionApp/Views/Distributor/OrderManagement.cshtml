@@ -1,0 +1,91 @@
+﻿@model List<WholesaleDistributionApp.Models.Order>
+@{
+    ViewData["Title"] = "Manage Order";
+}
+
+<input type="hidden" id="currentUrl" value="@Url.Action("OrderManagement", "Distributor")" />
+
+<div class="pc-content">
+    <!-- Breadcrumb section -->
+    <div class="page-header">
+        <div class="page-block">
+            <div class="row align-items-center">
+                <div class="col-md-12">
+                    <div class="page-header-title">
+                        <h5 class="m-b-10">Manage Order</h5>
+                    </div>
+                    <ul class="breadcrumb">
+                        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+                        <li class="breadcrumb-item" aria-current="page">Manage Order</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Breadcrumb section -->
+    <!-- Main Content section -->
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="card">
+                <!-- Top Bar -->
+                <div class="card-header">
+                    <h5 class="card-title">My Order List</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="orderTable" class="table table-bordered table-striped table-hover" style="width:100%">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th scope="col" style="width: 5%">No</th>
+                                    <th scope="col">Stock ID</th>
+                                    <th scope="col">Stock Name</th>
+                                    <th scope="col">Quantity</th>
+                                    <th scope="col">Price per Item</th>
+                                    <th scope="col">Distributor ID</th>
+                                    <th scope="col">Delivery Status</th>
+                                    <th scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model != null && Model.Count > 0)
+                                {
+                                    int index = 1;
+                                    foreach (var order in Model)
+                                    {
+                                        <tr>
+                                            <td>@index</td>
+                                            <td type="button" class="btn btn-primary btn-sm me-1 w-100 viewDetailsBtn" data-stock-id="@order.OrderId">@order.OrderId</td>
+                                            <td>@order.OrderDate</td>
+                                            <td>@order.WarehouseId</td>
+                                            <td>@order.TotalAmount</td>
+                                            <td>@order.OrderStatus</td>
+                                            <td>@order.PaymentReceiptURL</td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <button type="button" class="btn btn-primary btn-sm me-1 editStockBtn" data-stock-id="@order.OrderId">
+                                                        Edit
+                                                    </button>
+
+                                                    <button type="button" class="btn btn-danger btn-sm deleteStockBtn" data-stock-id="@order.OrderId">
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        index++;
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="9" class="text-center">You currently don't have any order to settle</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
