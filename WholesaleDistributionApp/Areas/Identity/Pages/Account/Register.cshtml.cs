@@ -148,7 +148,7 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
                     {
                         try
                         {
-                            var fileName = Path.GetFileName(Input.ImageFile.FileName);
+                            var fileName = $"{user.Id}{Path.GetExtension(Input.ImageFile.FileName)}";
                             var directoryPath = Path.Combine(_environment.WebRootPath, "images", "qr");
 
                             // Ensure the directory exists
