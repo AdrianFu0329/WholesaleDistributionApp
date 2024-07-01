@@ -126,7 +126,16 @@
                             </a>
                         </li>
                     }
-                    
+                    @if (User.IsInRole("Retailer"))
+                    {
+                        <li class="pc-item">
+                            <a class="pc-link" asp-controller="Retailer" asp-action="ViewProducts">
+                                <span class="pc-micon"><i class="ti ti-dashboard"></i></span>
+                                <span class="pc-mtext">Home</span>
+                            </a>
+                        </li>
+                    }
+
 @*                     <li class="pc-item">
                         <a href="#" class="pc-link">
                             <span class="pc-micon"><i class="ti ti-color-swatch"></i></span>
