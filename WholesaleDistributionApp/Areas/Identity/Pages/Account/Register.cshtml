@@ -21,8 +21,17 @@
                             </div>
                         </div>
                     </div>
-                    <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                    <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post" enctype="multipart/form-data">
                         <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+                        <div class="form-floating mb-3">
+                            <select asp-for="Input.Role" class="form-control" id="roleSelect" aria-required="true">
+                                <option value="" selected>Select an Account Type</option>
+                                <option value="Distributor">Distributor</option>
+                                <option value="Retailer">Retailer</option>
+                            </select>
+                            <label id="roleLabel" asp-for="Input.Role">Account Type</label>
+                            <span asp-validation-for="Input.Role" class="text-danger"></span>
+                        </div>
                         <div class="form-floating mb-3">
                             <input asp-for="Input.UserName" class="form-control" id="floatingInputUserName" placeholder="Username">
                             <label asp-for="Input.UserName">Username</label>
@@ -44,13 +53,24 @@
                             <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
                         </div>
                         <div class="form-floating mb-3">
-                            <select asp-for="Input.Role" class="form-control" id="roleSelect" aria-required="true">
-                                <option value="" selected>Select an Account Type</option>
-                                <option value="Distributor">Distributor</option>
-                                <option value="Retailer">Retailer</option>
-                            </select>
-                            <label id="roleLabel" asp-for="Input.Role">Account Type</label>
-                            <span asp-validation-for="Input.Role" class="text-danger"></span>
+                            <input asp-for="Input.Address" class="form-control" id="floatingInputAddress" placeholder="Address">
+                            <label asp-for="Input.Address">Address</label>
+                            <span asp-validation-for="Input.Address" class="text-danger"></span>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input asp-for="Input.BankName" class="form-control" id="floatingInputBankName" placeholder="Bank Name">
+                            <label asp-for="Input.BankName">Bank Name</label>
+                            <span asp-validation-for="Input.BankName" class="text-danger"></span>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input asp-for="Input.BankAccNo" class="form-control" id="floatingInputBankAccNo" placeholder="Bank Account Number">
+                            <label asp-for="Input.BankAccNo">Bank Account Number</label>
+                            <span asp-validation-for="Input.BankAccNo" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="qrImage" class="control-label">Bank QR Image</label>
+                            <input type="file" id="qrImage" asp-for="Input.ImageFile" class="form-control" />
+                            <span asp-validation-for="Input.ImageFile" class="text-danger"></span>
                         </div>
                         <div class="form-check mt-3">
                             <input class="form-check-input input-primary" type="checkbox" id="customCheckc1" checked>
