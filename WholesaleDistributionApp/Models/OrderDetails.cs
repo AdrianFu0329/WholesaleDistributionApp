@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WholesaleDistributionApp.Models
 {
@@ -12,5 +13,8 @@ namespace WholesaleDistributionApp.Models
         public double PricePerItem { get; set; }
         public double Subtotal { get; set; }
         public string StockDistributorId { get; set; }
+
+        [ForeignKey("StockId")]
+        public virtual DistributorStock DistributorStock { get; set; }
     }
 }
