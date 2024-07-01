@@ -45,6 +45,35 @@ namespace WholesaleDistributionApp.Controllers
             return View(stocks.ToList());
         }
 
+        public async Task<IActionResult> OrderManagement(string searchString, string category)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var userId = user!.Id;
+
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            // Load Stocks for the current Distributor
+            var orders = _context.Orders
+                                 .Where(s =>
+                                 s.StockDistributorId == userId)
+                                 .AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                orders = orders.Where(od => od.OrderId.ToString().Contains(searchString));
+            }
+
+            if (!string.IsNullOrEmpty(category) && category != "All")
+            {
+                orders = orders.Where(o => o.OrderStatus == category);
+            }
+
+            return View(orders.ToList());
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddStock(AddStockViewModel viewModel, IFormFile ImageFile)
@@ -236,6 +265,92 @@ namespace WholesaleDistributionApp.Controllers
             await _context.SaveChangesAsync();
 
             return Json(new { success = true, message = "Stock deleted successfully" });
+        }
+
+        
+        public async Task<IActionResult> GetOrderDetails(string orderIdentifier)
+        {
+            _logger.LogInformation($"GetOrderDetails called with orderIdentifier: {orderIdentifier}");
+
+            if (string.IsNullOrEmpty(orderIdentifier))
+            {
+                _logger.LogWarning("Order identifier is required but was not provided.");
+                return Json(new { success = false, message = "Order identifier is required." });
+            }
+
+            orderIdentifier = orderIdentifier.ToLower();
+
+            var orders = await _context.OrderDetails
+                .Include(od => od.DistributorStock)
+                .Where(od => od.OrderId.ToString().ToLower() == orderIdentifier)
+                .ToListAsync();
+
+            if (orders == null || !orders.Any())
+            {
+                _logger.LogWarning($"Order not found for orderIdentifier: {orderIdentifier}");
+                return Json(new { success = false, message = "Order not found." });
+            }
+
+            var orderDetails = orders.Select(order => new
+            {
+                order.OrderId,
+                order.OrderDetailsId,
+                order.StockId,
+                StockName = order.DistributorStock != null ? order.DistributorStock.ItemName : "Stock Name Not Available",
+                StockImage = order.DistributorStock != null ? order.DistributorStock.ImgDownloadURL : null,
+                order.Quantity,
+                order.Subtotal
+            }).ToList();
+
+            _logger.LogInformation($"Order details retrieved successfully for orderIdentifier: {orderIdentifier}");
+            return Json(new { success = true, orderDetails });
+        }
+
+        [HttpPost]
+        public IActionResult UpdateOrderStatus(int orderId, string status)
+        {
+            try
+            {
+                // Retrieve the order from the database based on orderId
+                var orderToUpdate = _context.Orders.FirstOrDefault(o => o.OrderId == orderId);
+
+                if (orderToUpdate != null)
+                {
+                    if (status == "Accepted" || status == "Cancelled")
+                    {
+                        var stockItems = _context.OrderDetails.Where(od => od.OrderId == orderId).ToList();
+                        foreach (var item in stockItems)
+                        {
+                            var stock = _context.DistributorStock.Find(item.StockId);
+                            if (status == "Accepted")
+                            {
+                                stock.Quantity -= item.Quantity;
+                            }
+                            else if (status == "Cancelled")
+                            {
+                                stock.Quantity += item.Quantity;
+                            }
+                            _context.DistributorStock.Update(stock);
+                        }
+                    }
+
+                    // Update the order status
+                    orderToUpdate.OrderStatus = status;
+
+                    // Save changes to the database
+                    _context.SaveChanges();
+
+                    return Json(new { success = true });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Order not found." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
         }
     }
 }
