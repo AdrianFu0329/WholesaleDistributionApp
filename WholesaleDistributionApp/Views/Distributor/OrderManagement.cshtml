@@ -202,6 +202,8 @@
                 if (confirmation) {
                     updateOrderStatus(orderId, 'Accepted', function (success) {
                         if (success) {
+                            console.log(`Order ${orderId} status updated to Accepted`);
+
                             // Update table cell with new status
                             var statusCell = $(`.orderStatus[data-order-id="${orderId}"]`);
                             statusCell.text('Accepted');
@@ -210,20 +212,23 @@
                             var acceptBtn = $(`.acceptOrderBtn[data-order-id="${orderId}"]`);
                             var shipBtn = $('<button type="button" class="btn btn-info btn-sm me-1 shipOrderBtn" data-order-id="' + orderId + '">Ship</button>');
                             acceptBtn.replaceWith(shipBtn); // Replace cancel button with ship button
+                            location.reload();
+                        } else {
+                            console.log(`Failed to update order ${orderId} status to Accepted`);
                         }
                     });
                 }
-                
-
             });
 
             // Ship Order Button Handler
-            $('.shipOrderBtn').on('click', function () {
+            $(document).on('click', '.shipOrderBtn', function () {
                 var orderId = $(this).data('order-id');
                 var confirmation = confirm("Are you sure you want to ship this order?");
                 if (confirmation) {
                     updateOrderStatus(orderId, 'Shipped', function (success) {
                         if (success) {
+                            console.log(`Order ${orderId} status updated to Shipped`);
+
                             // Update table cell with new status
                             var statusCell = $(`.orderStatus[data-order-id="${orderId}"]`);
                             statusCell.text('Shipped');
@@ -231,6 +236,9 @@
                             // Update buttons
                             var shipBtn = $(`.shipOrderBtn[data-order-id="${orderId}"]`);
                             shipBtn.remove();
+                            location.reload();
+                        } else {
+                            console.log(`Failed to update order ${orderId} status to Shipped`);
                         }
                     });
                 }
@@ -247,6 +255,7 @@
                                         <button type = "button" class= "btn btn-primary btn-sm me-1 orderDetailsBtn" data - order - id="${orderId}">Order Details</button>
                                         <button type="button" class="btn btn-secondary btn-sm" disabled>Cancelled</button>
                                 `);
+                            location.reload();
                         }
                     });
                 }
