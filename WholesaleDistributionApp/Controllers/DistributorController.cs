@@ -45,6 +45,35 @@ namespace WholesaleDistributionApp.Controllers
             return View(stocks.ToList());
         }
 
+        public async Task<IActionResult> OrderManagement(string searchString, string category)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var userId = user!.Id;
+
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            // Load Stocks for the current Distributor
+            var orders = _context.Orders
+                                 .Where(s =>
+                                 s.StockDistributorId == userId)
+                                 .AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                orders = orders.Where(od => od.OrderId.ToString().Contains(searchString));
+            }
+
+            if (!string.IsNullOrEmpty(category) && category != "All")
+            {
+                orders = orders.Where(o => o.OrderStatus == category);
+            }
+
+            return View(orders.ToList());
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddStock(AddStockViewModel viewModel, IFormFile ImageFile)
@@ -238,30 +267,7 @@ namespace WholesaleDistributionApp.Controllers
             return Json(new { success = true, message = "Stock deleted successfully" });
         }
 
-        public async Task<IActionResult> OrderManagement()
-        {
-            var user = await _userManager.GetUserAsync(User);
-            var userId = user!.Id;
-
-            if (userId == null)
-            {
-                return Unauthorized();
-            }
-
-            // Load Stocks for the current Distributor
-            var orders = _context.Orders
-                                 .Where(s => s.StockDistributorId == userId)
-                                 .AsQueryable();
-
-            //if (!string.IsNullOrEmpty(searchString))
-            //{
-              //  orders= orders.Where(s => s.ItemName.Contains(searchString) ||
-               //                            s.Description.Contains(searchString));
-            //}
-
-            return View(orders.ToList());
-        }
-
+        
         public async Task<IActionResult> GetOrderDetails(string orderIdentifier)
         {
             _logger.LogInformation($"GetOrderDetails called with orderIdentifier: {orderIdentifier}");
@@ -310,6 +316,24 @@ namespace WholesaleDistributionApp.Controllers
 
                 if (orderToUpdate != null)
                 {
+                    if (status == "Accepted" || status == "Cancelled")
+                    {
+                        var stockItems = _context.OrderDetails.Where(od => od.OrderId == orderId).ToList();
+                        foreach (var item in stockItems)
+                        {
+                            var stock = _context.DistributorStock.Find(item.StockId);
+                            if (status == "Accepted")
+                            {
+                                stock.Quantity -= item.Quantity;
+                            }
+                            else if (status == "Cancelled")
+                            {
+                                stock.Quantity += item.Quantity;
+                            }
+                            _context.DistributorStock.Update(stock);
+                        }
+                    }
+
                     // Update the order status
                     orderToUpdate.OrderStatus = status;
 

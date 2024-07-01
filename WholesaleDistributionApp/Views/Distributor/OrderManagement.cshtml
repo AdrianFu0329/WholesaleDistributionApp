@@ -28,8 +28,21 @@
         <div class="col-sm-12">
             <div class="card">
                 <!-- Top Bar -->
-                <div class="card-header">
-                    <h5 class="card-title">My Order List</h5>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">My Order List</h5>
+                    <form asp-controller="Distributor" asp-action="OrderManagement" method="get" class="d-flex align-items-center mb-0">
+                        <div class="me-2">
+                            <select name="category" id="categorySelect" class="form-select" style="width: 200px;">
+                                <option value="All">All Categories</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Accepted">Accepted</option>
+                                <option value="Shipped">Shipped</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <input type="text" name="searchString" id="searchInput" class="form-control me-2" placeholder="Search by Order ID" value="@ViewData["CurrentFilter"]">
+                        <button type="submit" class="btn btn-primary">Search</button>
+                    </form>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -109,6 +122,11 @@
                                         <td colspan="9" class="text-center">You currently don't have any order to settle</td>
                                     </tr>
                                 }
+                                <!-- New row for "No data available" message -->
+                                <tr id="noDataMessage" style="display: none;">
+                                    <td colspan="7" class="text-center">No data available</td>
+                                </tr>
+
                             </tbody>
                         </table>
                     </div>
@@ -137,6 +155,17 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> *@
     <script>
         $(document).ready(function () {
+            $('#searchInput').on('keyup', function () {
+                var value = $(this).val().toLowerCase();
+                $('#orderTable tbody tr').filter(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                });
+            });
+
+            $('#categorySelect').on('change', function () {
+                filterOrders();
+            });
+
             function openOrderDetailsModel(orderIdentifier) {
                 $.ajax({
                     url: '/Distributor/GetOrderDetails',
@@ -219,6 +248,33 @@
                     });
                 }
             });
+
+            function filterOrders() {
+                var searchValue = $('#searchInput').val().toLowerCase();
+                var categoryValue = $('#categorySelect').val();
+                var noDataFound = true;
+
+                $('#orderTable tbody tr').each(function () {
+                    var rowText = $(this).text().toLowerCase();
+                    var rowCategory = $(this).find('.orderStatus').text();
+
+                    var matchesSearch = rowText.indexOf(searchValue) > -1;
+                    var matchesCategory = (categoryValue === "All") || (rowCategory === categoryValue);
+
+                    if (matchesSearch && matchesCategory) {
+                        $(this).show();
+                        noDataFound = false;
+                    } else {
+                        $(this).hide();
+                    }
+                });
+
+                if (noDataFound) {
+                    $('#noDataMessage').show();
+                } else {
+                    $('#noDataMessage').hide();
+                }
+            }
 
             // Ship Order Button Handler
             $(document).on('click', '.shipOrderBtn', function () {
