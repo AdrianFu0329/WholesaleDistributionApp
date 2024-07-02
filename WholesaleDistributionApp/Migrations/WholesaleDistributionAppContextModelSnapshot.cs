@@ -339,13 +339,8 @@ namespace WholesaleDistributionApp.Migrations
                     b.Property<string>("Address")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("BankAccNo")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("BankName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Email")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Password")
@@ -355,10 +350,8 @@ namespace WholesaleDistributionApp.Migrations
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("QRImgURL")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("UserName")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserRole")
@@ -480,7 +473,6 @@ namespace WholesaleDistributionApp.Migrations
 
                     b.Navigation("DistributorStock");
                 });
-
 #pragma warning restore 612, 618
         }
     }
