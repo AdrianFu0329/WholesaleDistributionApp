@@ -252,11 +252,9 @@ namespace WholesaleDistributionApp.Migrations
 
                     b.Property<string>("StockDistributorId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("StockId");
-
-                    b.HasIndex("StockDistributorId");
 
                     b.ToTable("DistributorStock");
                 });
@@ -319,14 +317,12 @@ namespace WholesaleDistributionApp.Migrations
 
                     b.Property<string>("StockId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<double>("Subtotal")
                         .HasColumnType("float");
 
                     b.HasKey("OrderDetailsId");
-
-                    b.HasIndex("StockId");
 
                     b.ToTable("OrderDetails");
                 });
@@ -450,28 +446,6 @@ namespace WholesaleDistributionApp.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("WholesaleDistributionApp.Models.DistributorStock", b =>
-                {
-                    b.HasOne("WholesaleDistributionApp.Models.UserInfo", "Distributor")
-                        .WithMany()
-                        .HasForeignKey("StockDistributorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Distributor");
-                });
-
-            modelBuilder.Entity("WholesaleDistributionApp.Models.OrderDetails", b =>
-                {
-                    b.HasOne("WholesaleDistributionApp.Models.DistributorStock", "DistributorStock")
-                        .WithMany()
-                        .HasForeignKey("StockId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("DistributorStock");
                 });
 #pragma warning restore 612, 618
         }
