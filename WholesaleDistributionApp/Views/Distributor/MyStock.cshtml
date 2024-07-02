@@ -4,6 +4,27 @@
     ViewData["Title"] = "My Stock";
 }
 
+<style>
+    .image-preview-container {
+        width: 250px; 
+        height: 250px;
+        overflow: hidden;
+        border: 1px solid #ddd;
+        margin-bottom: 10px; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto; 
+        margin-right: auto;
+    }
+
+    .image-preview-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+</style
+
 <input type="hidden" id="currentUrl" value="@Url.Action("MyStock", "Distributor")" />
 <div class="pc-content">
     <!-- Breadcrumb section -->
@@ -149,7 +170,13 @@
                     @Html.AntiForgeryToken()
                     <input type="hidden" id="editStockId" name="StockId" />
                     <div class="form-group">
-                        <label for="editImage" class="control-label">Upload New Stock Image</label>
+                        <label for="editStockImagePreview" class="control-label">Current Stock Image</label>
+                        <div id="editStockImagePreviewContainer" class="image-preview-container">
+                            <img id="editStockImagePreview" src="" alt="Stock Image" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editStockImage" class="control-label">Upload New Stock Image</label>
                         <input type="file" id="editStockImage" name="ImageFile" class="form-control" />
                     </div>
                     <div class="form-group">
@@ -212,7 +239,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <img id="stockImage" src="" alt="Stock Image" style="max-width: 100%;" />
+                <img id="stockImage" class="image-preview-container" src="" alt="Stock Image" style="max-width: 100%;" />
                 <p><strong>Item Name:</strong> <span id="stockItemName"></span></p>
                 <p><strong>Description:</strong> <span id="stockDescription"></span></p>
                 <p><strong>Quantity:</strong> <span id="stockQuantity"></span></p>
@@ -224,7 +251,7 @@
 </div>
 
 @section Scripts {
-@*     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    @*     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> *@
     <script>
         function openStockDetailsModal(stockIdentifier) {
@@ -370,8 +397,8 @@
                         $('#editDescription').val(data.stock.description);
                         $('#editQuantity').val(data.stock.quantity);
                         $('#editSinglePrice').val(data.stock.singlePrice);
-                        $('#editImgDownloadURL').val(data.stock.imgDownloadURL);
                         $('#editDistributorDeliveryStatus').val(data.stock.distributorDeliveryStatus);
+                        $('#editStockImagePreview').attr('src', data.stock.imgDownloadURL);
                         $('#editStockModal').modal('show');
                     } else {
                         alert('Error fetching stock details: ' + data.message);
