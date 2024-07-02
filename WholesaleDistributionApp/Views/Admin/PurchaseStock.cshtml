@@ -4,6 +4,27 @@
     ViewData["Title"] = "Purchase Stock";
 }
 
+<style>
+    .image-preview-container {
+        width: 250px; 
+        height: 250px;
+        overflow: hidden;
+        border: 1px solid #ddd;
+        margin-bottom: 10px; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto; 
+        margin-right: auto;
+    }
+
+    .image-preview-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+</style
+
 <input type="hidden" id="currentUrl" value="@Url.Action("PurchaseStock", "Admin")" />
 <div class="pc-content">
     <!-- Breadcrumb section -->
@@ -99,7 +120,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <img id="stockImage" src="" alt="Stock Image" style="max-width: 100%;" />
+                <img id="stockImage" class="image-preview-container" src="" alt="Stock Image" style="max-width: 100%;" />
                 <p><strong>Item Name:</strong> <span id="stockItemName"></span></p>
                 <p><strong>Description:</strong> <span id="stockDescription"></span></p>
                 <p><strong>Quantity:</strong> <span id="stockQuantity"></span></p>

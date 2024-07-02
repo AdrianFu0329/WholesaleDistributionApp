@@ -51,32 +51,11 @@ namespace WholesaleDistributionApp.Migrations
                 nullable: false,
                 oldClrType: typeof(string),
                 oldType: "nvarchar(max)");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_DistributorStock_StockDistributorId",
-                table: "DistributorStock",
-                column: "StockDistributorId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_DistributorStock_UserInfo_StockDistributorId",
-                table: "DistributorStock",
-                column: "StockDistributorId",
-                principalTable: "UserInfo",
-                principalColumn: "UserId",
-                onDelete: ReferentialAction.Cascade);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_DistributorStock_UserInfo_StockDistributorId",
-                table: "DistributorStock");
-
-            migrationBuilder.DropIndex(
-                name: "IX_DistributorStock_StockDistributorId",
-                table: "DistributorStock");
-
             migrationBuilder.DropColumn(
                 name: "BankAccNo",
                 table: "UserInfo");

@@ -5,6 +5,27 @@
     ViewData["ActivePage"] = ManageNavPages.Index;
 }
 
+<style>
+    .qr-image-container {
+        width: 250px; 
+        height: 250px;
+        overflow: hidden;
+        border: 1px solid #ddd;
+        margin-bottom: 10px; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto; 
+        margin-right: auto;
+    }
+
+    .qr-image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+</style
+
 <h3>@ViewData["Title"]</h3>
 <partial name="_StatusMessage" for="StatusMessage" />
 <div class="row">
@@ -41,11 +62,11 @@
                 <span asp-validation-for="Input.BankAccNo" class="text-danger"></span>
             </div>
             <div class="form-group mb-3">
-                <label for="qrImage" class="control-label">Bank QR Image</label>
+                <label for="qrImage" class="control-label">Your Duitnow QR Image</label>
                 @if (!string.IsNullOrEmpty(Model.Input.QRImgURL))
                 {
                     <div class="mb-3">
-                        <img src="@Model.Input.QRImgURL" alt="QR Image" class="img-fluid" />
+                        <img src="@Model.Input.QRImgURL" alt="QR Image" class="qr-image-container" />
                     </div>
                 }
                 <input type="file" id="qrImage" name="ImageFile" class="form-control" />
