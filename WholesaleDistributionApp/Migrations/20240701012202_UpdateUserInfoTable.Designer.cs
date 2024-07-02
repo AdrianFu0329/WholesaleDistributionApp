@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WholesaleDistributionApp.Data;
 
@@ -11,9 +12,11 @@ using WholesaleDistributionApp.Data;
 namespace WholesaleDistributionApp.Migrations
 {
     [DbContext(typeof(WholesaleDistributionAppContext))]
-    partial class WholesaleDistributionAppContextModelSnapshot : ModelSnapshot
+    [Migration("20240701012202_UpdateUserInfoTable")]
+    partial class UpdateUserInfoTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -319,14 +322,12 @@ namespace WholesaleDistributionApp.Migrations
 
                     b.Property<string>("StockId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<double>("Subtotal")
                         .HasColumnType("float");
 
                     b.HasKey("OrderDetailsId");
-
-                    b.HasIndex("StockId");
 
                     b.ToTable("OrderDetails");
                 });
@@ -469,18 +470,6 @@ namespace WholesaleDistributionApp.Migrations
 
                     b.Navigation("Distributor");
                 });
-
-            modelBuilder.Entity("WholesaleDistributionApp.Models.OrderDetails", b =>
-                {
-                    b.HasOne("WholesaleDistributionApp.Models.DistributorStock", "DistributorStock")
-                        .WithMany()
-                        .HasForeignKey("StockId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("DistributorStock");
-                });
-
 #pragma warning restore 612, 618
         }
     }

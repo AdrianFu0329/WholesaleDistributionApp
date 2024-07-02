@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using WholesaleDistributionApp.Areas.Identity.Data;
 using WholesaleDistributionApp.Data;
@@ -35,6 +36,7 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IWebHostEnvironment _environment;
 
         public RegisterModel(
             UserManager<WholesaleDistributionAppUser> userManager,
@@ -42,7 +44,8 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
             SignInManager<WholesaleDistributionAppUser> signInManager,
             ILogger<RegisterModel> logger,
             IEmailSender emailSender,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            IWebHostEnvironment environment)
         {
             _userManager = userManager;
             _userStore = userStore;
@@ -51,6 +54,7 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
             _logger = logger;
             _emailSender = emailSender;
             _serviceProvider = serviceProvider;
+            _environment = environment;
         }
 
         [BindProperty]
@@ -63,28 +67,42 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
         public class InputModel
         {
             [Required]
-            [Display(Name = "UserName")]
+            [Display(Name = "Username")]
             public string UserName { get; set; }
 
             [Required]
             [EmailAddress]
-            [Display(Name = "Email")]
+            [Display(Name = "Email Address")]
             public string Email { get; set; }
 
             [Required]
-            [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
             [DataType(DataType.Password)]
             [Display(Name = "Password")]
             public string Password { get; set; }
 
             [DataType(DataType.Password)]
-            [Display(Name = "Confirm password")]
+            [Display(Name = "Confirm Password")]
             [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
             public string ConfirmPassword { get; set; }
 
             [Required]
-            [Display(Name = "Role")]
+            [Display(Name = "Account Type")]
             public string Role { get; set; }
+
+            [Required]
+            [Display(Name = "Bank Name")]
+            public string BankName { get; set; }
+
+            [Required]
+            [Display(Name = "Bank Account Number")]
+            public string BankAccNo { get; set; }
+
+            [Required]
+            [Display(Name = "Address")]
+            public string Address { get; set; }
+
+            [Display(Name = "Bank QR Image")]
+            public IFormFile ImageFile { get; set; }
         }
 
         public async Task OnGetAsync(string returnUrl = null)
@@ -106,6 +124,7 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
                     ModelState.AddModelError(string.Empty, "Email already exists.");
                     return Page();
                 }
+
                 var user = CreateUser();
 
                 await _userStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
@@ -120,6 +139,40 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
                     if (!string.IsNullOrEmpty(Input.Role) && (Input.Role == "Distributor" || Input.Role == "Retailer"))
                     {
                         await _userManager.AddToRoleAsync(user, Input.Role);
+                    }
+
+                    // Handle file upload
+                    string imagePath = null;
+
+                    if (Input.ImageFile != null && Input.ImageFile.Length > 0)
+                    {
+                        try
+                        {
+                            var fileName = $"{user.Id}{Path.GetExtension(Input.ImageFile.FileName)}";
+                            var directoryPath = Path.Combine(_environment.WebRootPath, "images", "qr");
+
+                            // Ensure the directory exists
+                            if (!Directory.Exists(directoryPath))
+                            {
+                                Directory.CreateDirectory(directoryPath);
+                            }
+
+                            var filePath = Path.Combine(directoryPath, fileName);
+
+                            using (var stream = new FileStream(filePath, FileMode.Create))
+                            {
+                                await Input.ImageFile.CopyToAsync(stream);
+                            }
+
+                            imagePath = $"/images/qr/{fileName}";
+                            _logger.LogInformation("Image path:" + imagePath);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error uploading image.");
+                            ModelState.AddModelError(string.Empty, "Error uploading image.");
+                            return Page();
+                        }
                     }
 
                     using (var scope = _serviceProvider.CreateScope())
@@ -139,10 +192,15 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
                                 Email = user.Email,
                                 PhoneNumber = user.PhoneNumber,
                                 Password = user.PasswordHash,
-                                UserRole = Input.Role
+                                UserRole = Input.Role,
+                                BankName = Input.BankName,
+                                BankAccNo = Input.BankAccNo,
+                                Address = Input.Address,
+                                QRImgURL = imagePath
                             };
                             context.UserInfo.Add(userInfo);
                             await context.SaveChangesAsync();
+                            _logger.LogInformation("User Info Table updated");
                         }
                         else
                         {
@@ -150,28 +208,10 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
                         }
                     }
 
-                    /*var userId = await _userManager.GetUserIdAsync(user);
-                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                    code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                    var callbackUrl = Url.Page(
-                        "/Account/ConfirmEmail",
-                        pageHandler: null,
-                        values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
-                        protocol: Request.Scheme);
-
-                    await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
-
-                    if (_userManager.Options.SignIn.RequireConfirmedAccount)
-                    {
-                        return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
-                    }*/
-                    //else
-                    //{
-                        await _signInManager.SignInAsync(user, isPersistent: false);
-                        return LocalRedirect(returnUrl);
-                    //}
+                    await _signInManager.SignInAsync(user, isPersistent: false);
+                    return LocalRedirect(returnUrl);
                 }
+
                 foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
@@ -181,7 +221,6 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
             // If we got this far, something failed, redisplay form
             return Page();
         }
-
 
         private WholesaleDistributionAppUser CreateUser()
         {

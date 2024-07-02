@@ -9,16 +9,47 @@
 <partial name="_StatusMessage" for="StatusMessage" />
 <div class="row">
     <div class="col-md-6">
-        <form id="profile-form" method="post">
+        <form id="profile-form" method="post" enctype="multipart/form-data">
             <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
             <div class="form-floating mb-3">
                 <input asp-for="Username" class="form-control" placeholder="Please choose your username." disabled />
                 <label asp-for="Username" class="form-label"></label>
             </div>
             <div class="form-floating mb-3">
-                <input asp-for="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number."/>
+                <input asp-for="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number." />
                 <label asp-for="Input.PhoneNumber" class="form-label"></label>
                 <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+            </div>
+            <div class="form-floating mb-3">
+                <input asp-for="Input.Address" class="form-control" placeholder="Please enter your address." />
+                <label asp-for="Input.Address" class="form-label"></label>
+                <span asp-validation-for="Input.Address" class="text-danger"></span>
+            </div>
+            <div class="form-floating mb-3">
+                <input asp-for="Input.Email" class="form-control" placeholder="Please enter your email." />
+                <label asp-for="Input.Email" class="form-label"></label>
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+            <div class="form-floating mb-3">
+                <input asp-for="Input.BankName" class="form-control" placeholder="Please enter your bank name." />
+                <label asp-for="Input.BankName" class="form-label"></label>
+                <span asp-validation-for="Input.BankName" class="text-danger"></span>
+            </div>
+            <div class="form-floating mb-3">
+                <input asp-for="Input.BankAccNo" class="form-control" placeholder="Please enter your bank account number." />
+                <label asp-for="Input.BankAccNo" class="form-label"></label>
+                <span asp-validation-for="Input.BankAccNo" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label for="qrImage" class="control-label">Bank QR Image</label>
+                @if (!string.IsNullOrEmpty(Model.Input.QRImgURL))
+                {
+                    <div class="mb-3">
+                        <img src="@Model.Input.QRImgURL" alt="QR Image" class="img-fluid" />
+                    </div>
+                }
+                <input type="file" id="qrImage" name="ImageFile" class="form-control" />
+                <span asp-validation-for="Input.ImageFile" class="text-danger"></span>
             </div>
             <button id="update-profile-button" type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
         </form>
