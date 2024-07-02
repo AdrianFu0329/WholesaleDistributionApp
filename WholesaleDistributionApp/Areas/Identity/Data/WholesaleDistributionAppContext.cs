@@ -33,11 +33,5 @@ public class WholesaleDistributionAppContext : IdentityDbContext<WholesaleDistri
                     .WithMany()
                     .HasForeignKey(s => s.StockDistributorId)
                     .HasPrincipalKey(d => d.UserId);
-
-        builder.Entity<WarehouseStock>()
-                    .HasOne(s => s.Distributor)
-                    .WithMany()
-                    .HasForeignKey(s => s.StockDistributorId)
-                    .HasPrincipalKey(d => d.UserId);
     }
 }
