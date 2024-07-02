@@ -746,6 +746,7 @@ namespace WholesaleDistributionApp.Controllers
 
             var order = new Order
             {
+                OrderId = Guid.NewGuid(),
                 OrderDate = DateTime.Now,
                 WarehouseId = userId,
                 TotalAmount = orderDetailsList.Sum(od => od.Subtotal),

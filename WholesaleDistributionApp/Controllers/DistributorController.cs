@@ -307,7 +307,7 @@ namespace WholesaleDistributionApp.Controllers
         }
 
         [HttpPost]
-        public IActionResult UpdateOrderStatus(int orderId, string status)
+        public IActionResult UpdateOrderStatus(Guid orderId, string status)
         {
             try
             {
