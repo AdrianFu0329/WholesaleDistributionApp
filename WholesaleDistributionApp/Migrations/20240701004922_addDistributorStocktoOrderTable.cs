@@ -31,19 +31,6 @@ namespace WholesaleDistributionApp.Migrations
                 table: "OrderDetails",
                 column: "StockId");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_DistributorStock_StockDistributorId",
-                table: "DistributorStock",
-                column: "StockDistributorId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_DistributorStock_UserInfo_StockDistributorId",
-                table: "DistributorStock",
-                column: "StockDistributorId",
-                principalTable: "UserInfo",
-                principalColumn: "UserId",
-                onDelete: ReferentialAction.Cascade);
-
             migrationBuilder.AddForeignKey(
                 name: "FK_OrderDetails_DistributorStock_StockId",
                 table: "OrderDetails",
@@ -57,20 +44,12 @@ namespace WholesaleDistributionApp.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(
-                name: "FK_DistributorStock_UserInfo_StockDistributorId",
-                table: "DistributorStock");
-
-            migrationBuilder.DropForeignKey(
                 name: "FK_OrderDetails_DistributorStock_StockId",
                 table: "OrderDetails");
 
             migrationBuilder.DropIndex(
                 name: "IX_OrderDetails_StockId",
                 table: "OrderDetails");
-
-            migrationBuilder.DropIndex(
-                name: "IX_DistributorStock_StockDistributorId",
-                table: "DistributorStock");
 
             migrationBuilder.AlterColumn<string>(
                 name: "StockId",

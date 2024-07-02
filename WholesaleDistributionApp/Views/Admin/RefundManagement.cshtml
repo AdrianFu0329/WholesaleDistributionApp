@@ -1,0 +1,95 @@
+﻿@model List<WholesaleDistributionApp.Models.RefundRequest>
+
+@{
+    ViewData["Title"] = "Refund Management";
+}
+
+<input type="hidden" id="currentUrl" value="@Url.Action("RefundManagement", "Admin")" />
+<div class="pc-content">
+    <!-- Breadcrumb section -->
+    <div class="page-header">
+        <div class="page-block">
+            <div class="row align-items-center">
+                <div class="col-md-12">
+                    <div class="page-header-title">
+                        <h5 class="m-b-10">Refunds</h5>
+                    </div>
+                    <ul class="breadcrumb">
+                        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+                        <li class="breadcrumb-item" aria-current="page">Refunds</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Breadcrumb section -->
+    <!-- Main Content section -->
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="card">
+                <!-- Top Bar -->
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title">Refunds</h5>
+                    <!-- Search Form -->
+                    <form asp-controller="Admin" asp-action="RefundManagement" method="get" class="d-flex align-items-center mb-3">
+                        <input type="text" name="searchString" id="searchInput" class="form-control me-2" placeholder="Search Item Name" value="@ViewData["CurrentFilter"]">
+                        <button type="submit" class="btn btn-primary">Search</button>
+                    </form>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="stockTable" class="table table-bordered table-striped table-hover" style="width:100%">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th scope="col" style="width: 5%">No</th>
+                                    <th scope="col">Refund ID</th>
+                                    <th scope="col">Order ID</th>
+                                    <th scope="col">Refund Date</th>
+                                    <th scope="col">Refund Amount</th>
+                                    <th scope="col">Refund Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model != null && Model.Count > 0)
+                                {
+                                    int index = 1;
+                                    foreach (var refund in Model)
+                                    {
+                                        <tr>
+                                            <td>@index</td>
+                                            <td type="button" class="btn btn-primary btn-sm me-1 w-100 viewDetailsBtn" data-stock-id="@refund.RefundId">@refund.RefundId</td>
+                                            <td>@refund.RefundId</td>
+                                            <td>@refund.OrderId</td>
+                                            <td>@refund.RefundDate</td>
+                                            <td>@refund.RefundStatus</td>
+                                            <td>@refund.RefundStatus</td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <button type="button" class="btn btn-primary btn-sm me-1 approveRequestBtn" data-stock-id="@refund.RefundId">
+                                                        Approve
+                                                    </button>
+
+                                                    <button type="button" class="btn btn-danger btn-sm denyRequestBtn" data-stock-id="@refund.RefundId">
+                                                        Deny
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        index++;
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="9" class="text-center">No Refund Requests as of now</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Main Content section -->
+</div>

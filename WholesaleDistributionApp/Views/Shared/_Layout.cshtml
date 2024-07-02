@@ -24,6 +24,7 @@
     <link rel="stylesheet" href="~/assets/css/style.css" id="main-style-link">
     <link rel="stylesheet" href="~/assets/css/style-preset.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
@@ -108,6 +109,12 @@
                                     </a>
                                 </li>
                             </ul>
+                        </li>
+                        <li class="pc-item">
+                            <a class="pc-link" asp-controller="Admin" asp-action="RefundManagement">
+                                <span class="pc-micon"><i class="ri-money-dollar-circle-line"></i></span>
+                                <span class="pc-mtext">Refunds</span>
+                            </a>
                         </li>
                     }
                     @if (User.IsInRole("Distributor"))

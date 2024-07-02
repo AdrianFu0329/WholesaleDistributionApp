@@ -20,6 +20,7 @@ public class WholesaleDistributionAppContext : IdentityDbContext<WholesaleDistri
     public DbSet<DistributorStock> DistributorStock { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderDetails> OrderDetails { get; set; }
+    public DbSet<RefundRequest> RefundRequest { get; set; }
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

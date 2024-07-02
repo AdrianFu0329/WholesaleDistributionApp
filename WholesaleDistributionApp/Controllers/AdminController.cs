@@ -81,6 +81,19 @@ namespace WholesaleDistributionApp.Controllers
             return View(stocks.ToList());
         }
 
+        public async Task<IActionResult> RefundManagement(string searchString)
+        {
+            // Load Warehouse Stocks
+            var refunds = _context.RefundRequest.AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                refunds = refunds.Where(s => s.OrderId.Contains(searchString));
+            }
+
+            return View(refunds.ToList());
+        }
+
         public IActionResult UserManagement()
         {
             return View();
