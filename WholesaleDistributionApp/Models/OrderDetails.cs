@@ -7,7 +7,7 @@ namespace WholesaleDistributionApp.Models
     {
         [Key]
         public int OrderDetailsId { get; set; }
-        public int OrderId { get; set; }
+        public Guid OrderId { get; set; }
         public string StockId { get; set; }
         public int Quantity { get; set; }
         public double PricePerItem { get; set; }

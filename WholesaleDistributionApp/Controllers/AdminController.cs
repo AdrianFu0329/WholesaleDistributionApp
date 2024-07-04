@@ -70,6 +70,7 @@ namespace WholesaleDistributionApp.Controllers
             // Load Distributor Stocks for Admin Purchase
             var stocks = _context.DistributorStock
                                  .Include(s => s.Distributor)
+                                 .Where(s => s.Quantity > 0)
                                  .AsQueryable();
             if (!string.IsNullOrEmpty(searchString))
             {
@@ -746,6 +747,7 @@ namespace WholesaleDistributionApp.Controllers
 
             var order = new Order
             {
+                OrderId = Guid.NewGuid(),
                 OrderDate = DateTime.Now,
                 WarehouseId = userId,
                 TotalAmount = orderDetailsList.Sum(od => od.Subtotal),

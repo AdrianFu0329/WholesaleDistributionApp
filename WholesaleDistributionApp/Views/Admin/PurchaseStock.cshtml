@@ -5,6 +5,44 @@
 }
 
 <style>
+        .invoice-section {
+        margin-bottom: 40px;
+        padding: 20px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background-color: #eaf3ff;
+    }
+    .invoice-header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .invoice-header h2 {
+        margin-bottom: 5px;
+        font-size: 24px;
+        font-weight: bold;
+    }
+    .invoice-header h4 {
+        margin-top: 0;
+        font-size: 18px;
+        color: #555;
+    }
+    .invoice-table th, .invoice-table td {
+        text-align: center;
+        vertical-align: middle;
+    }
+    .payment-section {
+        margin-top: 20px;
+    }
+    .payment-section label {
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    .paymentInfo p {
+        margin: 0;
+    }
+    .paymentInfo img {
+        margin-top: 10px;
+    }
     .image-preview-container {
         width: 250px; 
         height: 250px;
@@ -80,7 +118,7 @@
                                     foreach (var stock in Model)
                                     {
                                         <tr>
-                                            <td><input type="checkbox" class="selectRow" data-stock-id="@stock.StockId" data-stock-name="@stock.ItemName" data-quantity="@stock.Quantity" data-price="@stock.SinglePrice" data-distributor-id="@stock.StockDistributorId" data-distributor-name="@stock.Distributor?.UserName" /></td>
+                                            <td><input type="checkbox" class="selectRow" data-stock-id="@stock.StockId" data-stock-name="@stock.ItemName" data-quantity="@stock.Quantity" data-price="@stock.SinglePrice" data-distributor-id="@stock.StockDistributorId" data-distributor-name="@stock.Distributor?.UserName" data-distributor-bankacc="@stock.Distributor?.BankAccNo" data-distributor-bankname="@stock.Distributor?.BankName" data-distributor-qr="@stock.Distributor?.QRImgURL" data-distributor-address="@stock.Distributor?.Address"/></td>
                                             <td>@index</td>
                                             <td type="button" class="btn btn-primary btn-sm w-100 viewDetailsBtn" data-stock-id="@stock.StockId">@stock.StockId</td>
                                             <td>@stock.ItemName</td>
@@ -202,6 +240,7 @@
 </div>
 
 
+
 @section Scripts {
 @*     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> *@
@@ -265,8 +304,12 @@
                     var price = $(this).data('price');
                     var StockDistributorId = $(this).data('distributor-id');
                     var StockDistributorName = $(this).data('distributor-name');
+                    var BankAcc = $(this).data('distributor-bankacc');
+                    var BankName = $(this).data('distributor-bankname');
+                    var QrImg = $(this).data('distributor-qr');
+                    var Address = $(this).data('distributor-address');
                     var total = quantity * price;
-                    selectedStocks.push({ stockId, stockName, quantity, price, total, StockDistributorId, StockDistributorName });
+                    selectedStocks.push({ stockId, stockName, quantity, price, total, StockDistributorId, StockDistributorName, BankAcc, BankName, QrImg, Address });
                 });
 
                 // Check if no items are selected
@@ -288,6 +331,11 @@
                             <td>${stock.StockDistributorName}</td>
                             <td style="display: none;">${stock.StockDistributorId}</td>
                             <td class="totalCell">${stock.total}</td>
+                                                        <td style="display: none;">${stock.BankAcc}</td>
+                            <td style="display: none;">${stock.BankName}</td>
+                            <td style="display: none;">${stock.QrImg}</td>
+                            <td style="display: none;">${stock.Address}</td>
+
                         </tr>`;
                     confirmationTableBody.append(row);
                 });
@@ -388,6 +436,10 @@
                 $('#confirmationTable tbody tr').each(function () {
                     var distributorId = $(this).find('td:eq(6)').text();
                     var distributorName = $(this).find('td:eq(5)').text();
+                    var bankAcc = $(this).find('td:eq(8)').text();
+                    var bankName = $(this).find('td:eq(9)').text();
+                    var qrImg = $(this).find('td:eq(10)').text();
+                    var address = $(this).find('td:eq(11)').text();
                     var stockName = $(this).find('td:eq(2)').text();
                     var quantity = $(this).find('.quantityInput').val();
                     var price = $(this).find('td:eq(4)').text();
@@ -396,63 +448,81 @@
                     if (!groupedStocks[distributorId]) {
                         groupedStocks[distributorId] = [];
                     }
-                    groupedStocks[distributorId].push({ distributorName, stockName, quantity, price, total });
+                    groupedStocks[distributorId].push({ distributorName, stockName, quantity, price, total, bankAcc, bankName, qrImg, address });
                 });
 
                 var invoiceHtml = '';
                 for (var distributorId in groupedStocks) {
 
                     var distributorName = groupedStocks[distributorId][0].distributorName;
+                    var bankAcc = groupedStocks[distributorId][0].bankAcc || 'N/A';
+                    var bankName = groupedStocks[distributorId][0].bankName || 'N/A';
+                    var qrImg = groupedStocks[distributorId][0].qrImg || 'N/A';
+                    var address = groupedStocks[distributorId][0].address || 'N/A';
 
-                    invoiceHtml += '<hr/>';
-                    invoiceHtml += '<h5>Invoice for Distributor: ' + distributorName + '</h5>';
-                    invoiceHtml += '<hr/>';
-                    invoiceHtml += '<table class="table table-bordered table-striped">';
-                    invoiceHtml += '<thead><tr><th>Stock Name</th><th>Quantity</th><th>Price per Item</th><th>Total</th></tr></thead>';
-                    invoiceHtml += '<tbody>';
+                    invoiceHtml += '<div class="invoice-section">';
+                    invoiceHtml += '  <div class="invoice-header">';
+                    invoiceHtml += '    <h2>Invoice</h2>';
+                    invoiceHtml += '    <h4 class="mt-4">Distributor: ' + distributorName + '</h4>';
+                    invoiceHtml += '    <h5 class="mt-2">Address: ' + address + '</h5>';
+                    invoiceHtml += '  </div>';
+
+                    invoiceHtml += ' <div class="table-responsive">';
+                    invoiceHtml += '  <table class="table table-bordered table-striped invoice-table">';
+                    invoiceHtml += '    <thead>';
+                    invoiceHtml += '      <tr>';
+                    invoiceHtml += '        <th>Stock Name</th>';
+                    invoiceHtml += '        <th>Quantity</th>';
+                    invoiceHtml += '        <th>Price per Item</th>';
+                    invoiceHtml += '        <th>Total</th>';
+                    invoiceHtml += '      </tr>';
+                    invoiceHtml += '    </thead>';
+                    invoiceHtml += '    <tbody>';
 
                     var totalAmount = 0;
                     groupedStocks[distributorId].forEach(function (stock) {
-                        invoiceHtml += '<tr>';
-                        invoiceHtml += '<td>' + stock.stockName + '</td>';
-                        invoiceHtml += '<td>' + stock.quantity + '</td>';
-                        invoiceHtml += '<td>' + stock.price + '</td>';
-                        invoiceHtml += '<td>' + stock.total + '</td>';
-                        invoiceHtml += '</tr>';
+                        invoiceHtml += '      <tr>';
+                        invoiceHtml += '        <td>' + stock.stockName + '</td>';
+                        invoiceHtml += '        <td>' + stock.quantity + '</td>';
+                        invoiceHtml += '        <td>' + stock.price + '</td>';
+                        invoiceHtml += '        <td>' + stock.total + '</td>';
+                        invoiceHtml += '      </tr>';
                         totalAmount += parseFloat(stock.total);
                     });
 
-                    invoiceHtml += '</tbody>';
-                    invoiceHtml += '<tfoot>';
-                    invoiceHtml += '<tr><th colspan="3">Total Amount:</th><td>' + totalAmount.toFixed(2) + '</td></tr>';
-                    invoiceHtml += '</tfoot>';
-                    invoiceHtml += '</table>';
+                    invoiceHtml += '    </tbody>';
+                    invoiceHtml += '    <tfoot>';
+                    invoiceHtml += '      <tr>';
+                    invoiceHtml += '        <th colspan="3">Total Amount:</th>';
+                    invoiceHtml += '        <td>' + totalAmount.toFixed(2) + '</td>';
+                    invoiceHtml += '      </tr>';
+                    invoiceHtml += '    </tfoot>';
+                    invoiceHtml += '  </table>';
+                    invoiceHtml += '  </div>';
 
-                    // Payment method selection and proof of payment upload
-                    invoiceHtml += '<div class="mb-4">';
-                    invoiceHtml += '    <label for="paymentMethodSelect_' + distributorId + '" class="form-label"> Payment Method </label>';
-                    invoiceHtml += '    <select class="form-select paymentMethodSelect" id="paymentMethodSelect_' + distributorId + '">';
-                    invoiceHtml += '        <option value="" selected> --Select Payment Method-- </option>';
-                    invoiceHtml += '        <option value="bankTransfer"> Bank Account Transfer </option>';
-                    invoiceHtml += '        <option value="qrCode"> QR Code </option>';
+
+                    invoiceHtml += '  <div class="payment-section">';
+                    invoiceHtml += '    <label for="paymentMethodSelect_' + distributorId + '">Payment Method</label>';
+                    invoiceHtml += '    <select class="form-select paymentMethodSelect" id="paymentMethodSelect_' + distributorId + '" style="width: 20%;">';
+                    invoiceHtml += '      <option value="" selected>--Select Payment Method--</option>';
+                    invoiceHtml += '      <option value="bankTransfer">Bank Account Transfer</option>';
+                    invoiceHtml += '      <option value="qrCode">QR Code</option>';
                     invoiceHtml += '    </select>';
-                    invoiceHtml += '</div>';
 
-                    invoiceHtml += '<div id="bankTransferInfo_' + distributorId + '" class="paymentInfo" style="display:none; margin-bottom:20px">';
-                    invoiceHtml += '    <p><strong>Bank Name: </strong> ABC Bank</p>';
-                    invoiceHtml += '    <p><strong>Account Number: </strong> 1234567890</p>';
-                    invoiceHtml += '    <p><strong>Account Holder: </strong> John Doe</p>';
-                    invoiceHtml += '</div>';
+                    invoiceHtml += '    <div id="bankTransferInfo_' + distributorId + '" class="paymentInfo mt-4" style="display:none;">';
+                    invoiceHtml += '      <p><strong>Bank Name:</strong> ' + bankName + '</p>';
+                    invoiceHtml += '      <p><strong>Account Number:</strong> ' + bankAcc + '</p>';
+                    invoiceHtml += '      <p><strong>Account Holder:</strong> ' + distributorName + '</p>';
+                    invoiceHtml += '    </div>';
 
-                    invoiceHtml += '<div id="qrCodeInfo_' + distributorId + '" class="paymentInfo" style="display:none; margin-bottom:20px">';
-                    invoiceHtml += '    <img id="qrCodeImg_' + distributorId + '" src="../assets/images/user/avatar-2.jpg" alt="QR Code" style="max-width:100%;">';
-                    invoiceHtml += '</div>';
+                    invoiceHtml += '    <div id="qrCodeInfo_' + distributorId + '" class="paymentInfo" style="display:none;">';
+                    invoiceHtml += '      <img id="qrCodeImg_' + distributorId + '" src="' + qrImg + '" alt="QR Code" style="max-width:15%;margin-top:20px;">';
+                    invoiceHtml += '    </div>';
 
-                    invoiceHtml += '<div class="mb-4">';
-                    invoiceHtml += '    <label for="proofOfPayment_' + distributorId + '" class="form-label">Upload Proof of Payment for Distributor: ' + distributorName + '</label>';
-                    invoiceHtml += '    <input class="form-control proofOfPayment" type="file" id="proofOfPayment_' + distributorId + '">';
+                    invoiceHtml += '    <label class="mt-4" for="proofOfPayment_' + distributorId + '">Upload Proof of Payment</label>';
+                    invoiceHtml += '    <input class="form-control proofOfPayment" type="file" id="proofOfPayment_' + distributorId + '" style="width: 20%;">';
+                    invoiceHtml += '  </div>';
                     invoiceHtml += '</div>';
-                    invoiceHtml += '</br>';
                 }
 
                 return invoiceHtml;
