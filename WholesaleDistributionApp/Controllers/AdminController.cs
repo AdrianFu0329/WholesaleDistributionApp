@@ -70,6 +70,7 @@ namespace WholesaleDistributionApp.Controllers
             // Load Distributor Stocks for Admin Purchase
             var stocks = _context.DistributorStock
                                  .Include(s => s.Distributor)
+                                 .Where(s => s.Quantity > 0)
                                  .AsQueryable();
             if (!string.IsNullOrEmpty(searchString))
             {
