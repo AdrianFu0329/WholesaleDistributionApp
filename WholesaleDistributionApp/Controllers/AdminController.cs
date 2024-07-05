@@ -700,7 +700,7 @@ namespace WholesaleDistributionApp.Controllers
             return Json(new { success = true, message = "Stock deleted successfully" });
         }
         [HttpPost]
-        public async Task<IActionResult> SubmitOrder([FromForm] string orderDetails, [FromForm] IFormFile proofOfPayment)
+        public async Task<IActionResult> SubmitOrder([FromForm] string orderDetails, [FromForm] IFormFile proofOfPayment, [FromForm] string stockDistributorId)
         {
             if (string.IsNullOrEmpty(orderDetails))
             {
@@ -749,11 +749,12 @@ namespace WholesaleDistributionApp.Controllers
             {
                 OrderId = Guid.NewGuid(),
                 OrderDate = DateTime.Now,
-                WarehouseId = userId,
+                //WarehouseId = userId,
                 TotalAmount = orderDetailsList.Sum(od => od.Subtotal),
                 OrderStatus = "Pending",
+                OrderType = "Warehouse",
                 PaymentReceiptURL = "",
-                StockDistributorId = "",
+                StockDistributorId = stockDistributorId,
             };
 
             var fileName = Path.GetFileName(proofOfPayment.FileName);
@@ -783,7 +784,7 @@ namespace WholesaleDistributionApp.Controllers
             {
                 detail.OrderId = order.OrderId;
                 _context.OrderDetails.Add(detail);
-                order.StockDistributorId = detail.StockDistributorId;
+                //order.StockDistributorId = detail.StockDistributorId;
             }
 
             await _context.SaveChangesAsync();
