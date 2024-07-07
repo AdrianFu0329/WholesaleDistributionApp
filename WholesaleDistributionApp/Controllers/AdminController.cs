@@ -92,7 +92,10 @@ namespace WholesaleDistributionApp.Controllers
                 refunds = refunds.Where(s => s.OrderId.Contains(searchString));
             }
 
-            return View(refunds.ToList());
+            // Sort by RequestDate in descending order
+            refunds = refunds.OrderByDescending(r => r.RequestDate);
+
+            return View(await refunds.ToListAsync());
         }
 
         public IActionResult UserManagement()
@@ -792,6 +795,40 @@ namespace WholesaleDistributionApp.Controllers
             return Json(new { success = true });
         }
 
+        public class RefundStatusUpdateModel
+        {
+            public int RefundId { get; set; }
+            public string Status { get; set; }
+        }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateRefundStatus([FromBody] UpdateRefundStatusRequest request)
+        {
+            var refund = await _context.RefundRequest.FindAsync(request.RefundId);
+            if (refund == null)
+            {
+                return Json(new { success = false, message = "Refund not found." });
+            }
+
+            refund.RefundStatus = request.Status;
+
+            try
+            {
+                _context.RefundRequest.Update(refund);
+                await _context.SaveChangesAsync();
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error updating refund status: {ex.Message}" });
+            }
+        }
+
+        public class UpdateRefundStatusRequest
+        {
+            public string RefundId { get; set; }
+            public string Status { get; set; }
+        }
     }
 }

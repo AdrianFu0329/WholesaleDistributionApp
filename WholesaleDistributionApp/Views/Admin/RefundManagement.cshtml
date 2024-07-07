@@ -32,13 +32,13 @@
                     <h5 class="card-title">Refunds</h5>
                     <!-- Search Form -->
                     <form asp-controller="Admin" asp-action="RefundManagement" method="get" class="d-flex align-items-center mb-3">
-                        <input type="text" name="searchString" id="searchInput" class="form-control me-2" placeholder="Search Item Name" value="@ViewData["CurrentFilter"]">
+                        <input type="text" name="searchString" id="searchInput" class="form-control me-2" placeholder="Search Order ID" value="@ViewData["CurrentFilter"]">
                         <button type="submit" class="btn btn-primary">Search</button>
                     </form>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table id="stockTable" class="table table-bordered table-striped table-hover" style="width:100%">
+                        <table id="refundsTable" class="table table-bordered table-striped table-hover" style="width:100%">
                             <thead class="thead-light">
                                 <tr>
                                     <th scope="col" style="width: 5%">No</th>
@@ -47,6 +47,7 @@
                                     <th scope="col">Refund Date</th>
                                     <th scope="col">Refund Amount</th>
                                     <th scope="col">Refund Status</th>
+                                    <th scope="col">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -57,19 +58,18 @@
                                     {
                                         <tr>
                                             <td>@index</td>
-                                            <td type="button" class="btn btn-primary btn-sm me-1 w-100 viewDetailsBtn" data-stock-id="@refund.RefundId">@refund.RefundId</td>
                                             <td>@refund.RefundId</td>
                                             <td>@refund.OrderId</td>
-                                            <td>@refund.RefundDate</td>
-                                            <td>@refund.RefundStatus</td>
-                                            <td>@refund.RefundStatus</td>
+                                            <td>@refund.RequestDate</td>
+                                            <td>@refund.RefundAmount</td>
+                                            <td id="status-@refund.RefundId">@refund.RefundStatus</td>
                                             <td>
                                                 <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-primary btn-sm me-1 approveRequestBtn" data-stock-id="@refund.RefundId">
+                                                    <button type="button" class="btn btn-primary btn-sm me-1 approveRequestBtn" data-refund-id="@refund.RefundId">
                                                         Approve
                                                     </button>
 
-                                                    <button type="button" class="btn btn-danger btn-sm denyRequestBtn" data-stock-id="@refund.RefundId">
+                                                    <button type="button" class="btn btn-danger btn-sm denyRequestBtn" data-refund-id="@refund.RefundId">
                                                         Deny
                                                     </button>
                                                 </div>
@@ -81,7 +81,7 @@
                                 else
                                 {
                                     <tr>
-                                        <td colspan="9" class="text-center">No Refund Requests as of now</td>
+                                        <td colspan="7" class="text-center">No Refund Requests as of now</td>
                                     </tr>
                                 }
                             </tbody>
@@ -93,3 +93,51 @@
     </div>
     <!-- End Main Content section -->
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll(".approveRequestBtn, .denyRequestBtn").forEach(button => {
+                button.addEventListener("click", function () {
+                    var refundId = this.getAttribute("data-refund-id");
+                    var action = this.classList.contains("approveRequestBtn") ? "approve" : "deny";
+                    var statusText = action === "approve" ? "Approved" : "Denied";
+                    var confirmationMessage = "Are you sure you want to " + action + " this refund request?";
+
+                    if (confirm(confirmationMessage)) {
+                        var statusCell = document.getElementById("status-" + refundId);
+
+                        fetch('@Url.Action("UpdateRefundStatus", "Admin")', {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "RequestVerificationToken": $('input[name="__RequestVerificationToken"]').val()
+                            },
+                            body: JSON.stringify({ refundId: refundId, status: statusText })
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    // Update the status cell
+                                    statusCell.textContent = statusText;
+
+                                    // Hide the approve and deny buttons
+                                    this.style.display = "none";
+                                    var siblingButton = action === "approve" ? this.nextElementSibling : this.previousElementSibling;
+                                    if (siblingButton) {
+                                        siblingButton.style.display = "none";
+                                    }
+                                } else {
+                                    alert(data.message);
+                                }
+                            })
+                            .catch(error => {
+                                console.error("Error updating refund status:", error);
+                                alert("An error occurred while updating the refund status.");
+                            });
+                    }
+                });
+            });
+        });
+    </script>
+}

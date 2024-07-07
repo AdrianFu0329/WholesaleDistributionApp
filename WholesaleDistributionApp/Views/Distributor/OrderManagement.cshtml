@@ -94,13 +94,13 @@
                                                         <button type="button" class="btn btn-info btn-sm me-1 shipOrderBtn" data-order-id="@order.OrderId">
                                                             Ship
                                                         </button>
-                                                        <button type="button" class="btn btn-danger btn-sm cancelOrderBtn" data-order-id="@order.OrderId">
+                                                        <button type="button" class="btn btn-danger btn-sm cancelOrderBtn" data-order-id="@order.OrderId" data-refund-amount="@order.TotalAmount">
                                                             Cancel
                                                         </button>
                                                     }
                                                     else if (order.OrderStatus == "Shipped")
                                                     {
-                                                        <button type="button" class="btn btn-danger btn-sm cancelOrderBtn" data-order-id="@order.OrderId">
+                                                        <button type="button" class="btn btn-danger btn-sm cancelOrderBtn" data-order-id="@order.OrderId" data-refund-amount="@order.TotalAmount">
                                                             Cancel
                                                         </button>
                                                     }
@@ -108,6 +108,11 @@
                                                     {
                                                         <button type="button" class="btn btn-secondary btn-sm" disabled>
                                                             Cancelled
+                                                        </button>
+                                                    } else if (order.OrderStatus == "Refund Pending")
+                                                    {
+                                                        <button type="button" class="btn btn-secondary btn-sm" disabled>
+                                                            Pending Refund
                                                         </button>
                                                     }
                                                 </div>
@@ -300,7 +305,7 @@
                 }
             });
 
-            $('.cancelOrderBtn').on('click', function () {
+            /*$('.cancelOrderBtn').on('click', function () {
                 var orderId = $(this).data('order-id');
                 var confirmation = confirm("Are you sure you want to cancel this order?");
                 if (confirmation) {
@@ -315,7 +320,41 @@
                         }
                     });
                 }
+            });*/
+
+            $('.cancelOrderBtn').on('click', function () {
+                var orderId = $(this).data('order-id');
+                var refundAmount = parseFloat($(this).data('refund-amount'));
+
+                var confirmation = confirm("Are you sure you want to cancel this order and request a refund?");
+                if (confirmation) {
+                    submitRefundRequest(refundAmount, orderId);
+                }
             });
+
+            function submitRefundRequest(refundAmount, orderId) {
+                $.ajax({
+                    url: '/Distributor/SubmitRefundRequest',
+                    type: 'POST',
+                    data: { refundAmount: refundAmount, orderId: orderId },
+                    success: function (response) {
+                        if (response.success) {
+                            updateOrderStatus(orderId, 'Refund Pending', function (success) {
+                                if (success) {
+                                    location.reload();
+                                } else {
+                                    alert('Failed to update order status to Refund Pending.');
+                                }
+                            });
+                        } else {
+                            alert('Failed to submit refund request.');
+                        }
+                    },
+                    error: function () {
+                        alert('An error occurred while submitting refund request.');
+                    }
+                });
+            }
 
             function updateOrderStatus(orderId, status, callback) {
                 $.ajax({

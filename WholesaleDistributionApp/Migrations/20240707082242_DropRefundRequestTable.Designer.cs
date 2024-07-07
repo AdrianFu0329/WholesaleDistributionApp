@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WholesaleDistributionApp.Data;
 
@@ -11,9 +12,11 @@ using WholesaleDistributionApp.Data;
 namespace WholesaleDistributionApp.Migrations
 {
     [DbContext(typeof(WholesaleDistributionAppContext))]
-    partial class WholesaleDistributionAppContextModelSnapshot : ModelSnapshot
+    [Migration("20240707082242_DropRefundRequestTable")]
+    partial class DropRefundRequestTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -330,30 +333,6 @@ namespace WholesaleDistributionApp.Migrations
                     b.HasIndex("WarehouseStockId");
 
                     b.ToTable("OrderDetails");
-                });
-
-            modelBuilder.Entity("WholesaleDistributionApp.Models.RefundRequest", b =>
-                {
-                    b.Property<string>("RefundId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("OrderId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<double>("RefundAmount")
-                        .HasColumnType("float");
-
-                    b.Property<string>("RefundStatus")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("RequestDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("RefundId");
-
-                    b.ToTable("RefundRequest");
                 });
 
             modelBuilder.Entity("WholesaleDistributionApp.Models.UserInfo", b =>
