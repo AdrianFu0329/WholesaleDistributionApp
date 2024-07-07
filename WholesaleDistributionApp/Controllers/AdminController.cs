@@ -378,6 +378,42 @@ namespace WholesaleDistributionApp.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetUserEmail(string userId)
+        {
+            try
+            {
+                // Find the user by userId
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    return Json(new { success = false, message = $"User not found. UserId: {userId}" });
+                }
+
+                // Fetch the userInfo by user.Id
+                var userInfo = await _context.UserInfo.FirstOrDefaultAsync(u => u.UserId == user.Id);
+                if (userInfo == null)
+                {
+                    return Json(new { success = false, message = "User info not found." });
+                }
+
+                // Get the user's email
+                var userEmail = userInfo.Email;
+
+                // Log or display the user email for verification (for example purposes only)
+                Console.WriteLine($"UserId: {userId}, Email: {userEmail}");
+
+                // Return the user email
+                return Ok(new { success = true, email = userEmail });
+            }
+            catch (Exception ex)
+            {
+                // Handle any exceptions that occur during the process
+                return Json(new { success = false, message = "An error occurred while fetching user.", error = ex.Message });
+            }
+        }
+
+
         [HttpPost]
         public async Task<IActionResult> EditUser(EditModel model)
         {
@@ -829,6 +865,207 @@ namespace WholesaleDistributionApp.Controllers
         {
             public string RefundId { get; set; }
             public string Status { get; set; }
+        }
+
+
+        public async Task<IActionResult> DistributorOrderManagement(string searchString, string category)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var userId = user!.Id;
+
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            // Load Stocks for the current Distributor
+            var orders = _context.Orders
+                                 .Where(s =>
+                                 s.OrderType == "Warehouse")
+                                 .AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                orders = orders.Where(od => od.OrderId.ToString().Contains(searchString));
+            }
+
+            if (!string.IsNullOrEmpty(category) && category != "All")
+            {
+                orders = orders.Where(o => o.OrderStatus == category);
+            }
+
+            return View(orders.ToList());
+        }
+
+        public async Task<IActionResult> RetailerOrderManagement(string searchString, string category)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var userId = user!.Id;
+
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            // Load Stocks for the current Distributor
+            var orders = _context.Orders
+                                 .Where(s =>
+                                 s.StockDistributorId == userId)
+                                 .AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                orders = orders.Where(od => od.OrderId.ToString().Contains(searchString));
+            }
+
+            if (!string.IsNullOrEmpty(category) && category != "All")
+            {
+                orders = orders.Where(o => o.OrderStatus == category);
+            }
+
+            return View(orders.ToList());
+        }
+
+
+        public async Task<IActionResult> GetOrderDetails(string orderIdentifier)
+        {
+            _logger.LogInformation($"GetOrderDetails called with orderIdentifier: {orderIdentifier}");
+
+            if (string.IsNullOrEmpty(orderIdentifier))
+            {
+                _logger.LogWarning("Order identifier is required but was not provided.");
+                return Json(new { success = false, message = "Order identifier is required." });
+            }
+
+            orderIdentifier = orderIdentifier.ToLower();
+
+            var orders = await _context.OrderDetails
+                .Include(od => od.DistributorStock)
+                .Where(od => od.OrderId.ToString().ToLower() == orderIdentifier)
+                .ToListAsync();
+
+            if (orders == null || !orders.Any())
+            {
+                _logger.LogWarning($"Order not found for orderIdentifier: {orderIdentifier}");
+                return Json(new { success = false, message = "Order not found." });
+            }
+
+            var orderDetails = orders.Select(order => new
+            {
+                order.OrderId,
+                order.OrderDetailsId,
+                StockId = order.StockId != null ? order.StockId : "No id found",
+                StockName = order.DistributorStock != null ? order.DistributorStock.ItemName : "Stock Name Not Available",
+                StockImage = order.DistributorStock != null ? order.DistributorStock.ImgDownloadURL : null,
+                order.Quantity,
+                order.Subtotal
+            }).ToList();
+
+            _logger.LogInformation($"Order details retrieved successfully for orderIdentifier: {orderIdentifier}");
+            return Json(new { success = true, orderDetails });
+        }
+
+        [HttpPost]
+        public IActionResult UpdateOrderStatus(Guid orderId, string status)
+        {
+            try
+            {
+                // Retrieve the order from the database based on orderId
+                var orderToUpdate = _context.Orders.FirstOrDefault(o => o.OrderId == orderId);
+
+                if (orderToUpdate != null)
+                {
+                    if (status == "Completed" || status == "Cancelled")
+                    {
+                        var stockItems = _context.OrderDetails.Where(od => od.OrderId == orderId).ToList();
+                        foreach (var item in stockItems)
+                        {
+                            var stock = _context.WarehouseStock.Find(item.StockId);
+                            if (stock == null)
+                            {
+                                //get stock details by stock id
+                                var newStockDetails = _context.DistributorStock.Find(item.StockId);
+                                //add new stock
+                                var newStock = new WarehouseStock
+                                {
+                                    StockId = Guid.NewGuid().ToString(),
+                                    DistributorStockId = newStockDetails.StockDistributorId, // Need to set here when purchase complete
+                                    ItemName = newStockDetails.ItemName,
+                                    Description = newStockDetails.Description,
+                                    Quantity = item.Quantity,
+                                    SinglePrice = newStockDetails.SinglePrice,
+                                    StockDistributorId = newStockDetails.StockDistributorId,
+                                    ImgDownloadURL = newStockDetails.ImgDownloadURL,
+                                    ForRetailerPurchase = false,
+                                };
+
+                                _context.WarehouseStock.Add(newStock);
+
+                            }
+                            else
+                            {
+                                if (status == "Completed")
+                                {
+                                    //add product to warehouse
+                                    stock.Quantity += item.Quantity;
+                                }
+                                else if (status == "Cancelled")
+                                {
+                                    stock.Quantity += item.Quantity;
+                                }
+                                _context.WarehouseStock.Update(stock);
+                            }
+                            
+                        }
+                    }
+
+                    // Update the order status
+                    orderToUpdate.OrderStatus = status;
+
+                    // Save changes to the database
+                    _context.SaveChanges();
+
+                    return Json(new { success = true });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Order not found." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public IActionResult SubmitRefundRequest(double refundAmount, string orderId)
+        {
+            try
+            {
+                // Generate new GUID for RefundId
+                var refundId = Guid.NewGuid();
+
+                // Create new RefundRequest object
+                var refundRequest = new RefundRequest
+                {
+                    RefundId = refundId.ToString(),
+                    RequestDate = DateTime.UtcNow,
+                    RefundAmount = refundAmount,
+                    RefundStatus = "Pending",
+                    OrderId = orderId
+                };
+
+                // Add to DbContext and save changes
+                _context.RefundRequest.Add(refundRequest);
+                _context.SaveChanges();
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
         }
     }
 }

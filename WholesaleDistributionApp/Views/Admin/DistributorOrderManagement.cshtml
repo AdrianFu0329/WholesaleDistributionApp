@@ -1,0 +1,379 @@
+﻿@model List<WholesaleDistributionApp.Models.Order>
+@{
+    ViewData["Title"] = "Manage Order";
+}
+
+<input type="hidden" id="currentUrl" value="@Url.Action("OrderManagement", "Admin")" />
+
+<div class="pc-content">
+    <!-- Breadcrumb section -->
+    <div class="page-header">
+        <div class="page-block">
+            <div class="row align-items-center">
+                <div class="col-md-12">
+                    <div class="page-header-title">
+                        <h5 class="m-b-10">Manage Order</h5>
+                    </div>
+                    <ul class="breadcrumb">
+                        <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+                        <li class="breadcrumb-item" aria-current="page">Manage Order</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Breadcrumb section -->
+    <!-- Main Content section -->
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="card">
+                <!-- Top Bar -->
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">My Order List</h5>
+                    <form asp-controller="Admin" asp-action="OrderManagement" method="get" class="d-flex align-items-center mb-0">
+                        <div class="me-2">
+                            <select name="category" id="categorySelect" class="form-select" style="width: 200px;">
+                                <option value="All">All Categories</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Accepted">Accepted</option>
+                                <option value="Shipped">Shipped</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <input type="text" name="searchString" id="searchInput" class="form-control me-2" placeholder="Search by Order ID" value="@ViewData["CurrentFilter"]">
+                        <button type="submit" class="btn btn-primary">Search</button>
+                    </form>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="orderTable" class="table table-bordered table-striped table-hover" style="width:100%">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th scope="col" style="width: 5%">No</th>
+                                    <th scope="col">Order ID</th>
+                                    <th scope="col">Order Date and Time</th>
+                                    <th scope="col">Total Amount</th>
+                                    <th scope="col">Order Status</th>
+                                    <th scope="col">Proof of Payment</th>
+                                    <th scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model != null && Model.Count > 0)
+                                {
+                                    int index = 1;
+                                    foreach (var order in Model)
+                                    {
+                                        <tr>
+                                            <td>@index</td>
+                                            <td>@order.OrderId</td>
+                                            <td>@order.OrderDate</td>
+                                            <td>RM @order.TotalAmount</td>
+                                            <td class="orderStatus" data-order-id="@order.OrderId">@order.OrderStatus</td>
+                                            <td>
+                                                <button type="button" class="btn btn-primary btn-sm me-1 viewReceiptBtn" data-receipt-url="@order.PaymentReceiptURL">
+                                                    View Receipt
+                                                </button>
+                                            </td>
+                                            <td id="orderActions_@order.OrderId">
+                                                <div class="btn-group" role="group">
+                                                    <button type="button" class="btn btn-primary btn-sm me-1 orderDetailsBtn" data-order-id="@order.OrderId">
+                                                        Order Details
+                                                    </button>
+                                                    @if (order.OrderStatus == "Pending")
+                                                    {
+                                                        <button type="button" class="btn btn-danger btn-sm cancelOrderBtn" data-order-id="@order.OrderId" data-refund-amount="@order.TotalAmount">
+                                                            Cancel
+                                                        </button>
+                                                    }
+                                                    else if (order.OrderStatus == "Accepted")
+                                                    {
+                                                        <button type="button" class="btn btn-danger btn-sm cancelOrderBtn" data-order-id="@order.OrderId" data-refund-amount="@order.TotalAmount">
+                                                            Cancel
+                                                        </button>
+                                                    }
+                                                    else if (order.OrderStatus == "Shipped")
+                                                    {
+                                                        <button type="button" class="btn btn-success btn-sm me-1 receiveOrderBtn" data-order-id="@order.OrderId">
+                                                            Order Received
+                                                        </button>
+                                                    }
+                                                    else if (order.OrderStatus == "Cancelled")
+                                                    {
+                                                        <button type="button" class="btn btn-secondary btn-sm" disabled>
+                                                            Cancelled
+                                                        </button>
+                                                    } else if (order.OrderStatus == "Refund Pending")
+                                                    {
+                                                        <button type="button" class="btn btn-secondary btn-sm" disabled>
+                                                            Pending Refund
+                                                        </button>
+                                                    }
+                                                    else if (order.OrderStatus == "Completed")
+                                                    {
+                                                        <button type="button" class="btn btn-info btn-sm me-1 contactDistributorBtn" data-distributor-id="@order.StockDistributorId">
+                                                            Contact Distributor
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        index++;
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="9" class="text-center">You currently don't have any order to settle</td>
+                                    </tr>
+                                }
+                                <!-- New row for "No data available" message -->
+                                <tr id="noDataMessage" style="display: none;">
+                                    <td colspan="7" class="text-center">No data available</td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Order Details Modal -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderDetailsModalLabel">Order Details for Order <span id="orderId"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="orderDetailsContainer"></div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+@*     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> *@
+    <script>
+        $(document).ready(function () {
+            $('#searchInput').on('keyup', function () {
+                var value = $(this).val().toLowerCase();
+                $('#orderTable tbody tr').filter(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                });
+            });
+
+            $('#categorySelect').on('change', function () {
+                filterOrders();
+            });
+
+            function openOrderDetailsModel(orderIdentifier) {
+                $.ajax({
+                    url: '/Admin/GetOrderDetails',
+                    type: 'GET',
+                    data: { orderIdentifier: orderIdentifier },
+                    success: function (response) {
+                        if (response.success) {
+                            // Clear the existing order details
+                            $('#orderDetailsContainer').empty();
+                            $('#orderId').text(orderIdentifier);
+
+                            // Iterate over the list of orders and populate the modal
+                            response.orderDetails.forEach(function (order) {
+                                console.log(order.orderDetailsId)
+                                var orderDetailsHtml = `
+                                    <div class="order-detail row">
+                                    <div class="col-md-8"> <!-- Adjust column size as needed -->
+                                        <p>Order Details ID: <span id="orderDetailsId">${order.orderDetailsId}</span></p>
+                                        <p>Stock Name: <span id="stockName">${order.stockName}</span></p>
+                                        <p>Stock ID: <span id="stockId">${order.stockId}</span></p>
+                                        <p>Quantity: <span id="quantity">${order.quantity}</span></p>
+                                        <p>Subtotal: <span id="subtotal">${order.subtotal}</span></p>
+                                    </div>
+                                    <div class="col-md-4 text-end"> <!-- Adjust column size and alignment as needed -->
+                                        <img src="${order.stockImage}" alt="${order.stockName}" class="img-fluid">
+                                    </div>
+                                </div>
+                                <hr />
+                            `;
+                                console.log(orderDetailsHtml)
+
+                                $('#orderDetailsContainer').append(orderDetailsHtml);
+                            });
+
+                            // Show the modal
+                            $('#orderDetailsModal').modal('show');
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function () {
+                        alert('An error occurred while fetching order details.');
+                    }
+                });
+            }
+
+
+            // View Details Button Handler
+            $('.orderDetailsBtn').on('click', function () {
+                var orderId = $(this).data('order-id');
+                openOrderDetailsModel(orderId);
+            });
+
+            $('.viewReceiptBtn').on('click', function () {
+                var receiptUrl = $(this).data('receipt-url');
+                window.open(receiptUrl, '_blank'); // Open receipt URL in a new tab
+            });
+
+            // Receive Order Button Handler
+            $('.receiveOrderBtn').on('click', function () {
+                var orderId = $(this).data('order-id');
+                var confirmation = confirm("Confirm Received Order");
+                if (confirmation) {
+                    updateOrderStatus(orderId, 'Completed', function (success) {
+                        if (success) {
+                            console.log(`Order ${orderId} status updated to Completed`);
+
+                            // Update table cell with new status
+                            var statusCell = $(`.orderStatus[data-order-id="${orderId}"]`);
+                            statusCell.text('Completed');
+
+                            // Update buttons
+                            var receiveBtn = $(`.receiveOrderBtn[data-order-id="${orderId}"]`);
+                            var completedBtn = $('<button type="button" class="btn btn-info btn-sm me-1 contactDistributorBtn" data-order-id="'+orderId+'">Contact Distributor</button>');
+                            receiveBtn.replaceWith(completedBtn); // Replace cancel button with ship button
+                        } else {
+                            console.log(`Failed to update order ${orderId} status to Accepted`);
+                        }
+                    });
+                }
+            });
+
+            function filterOrders() {
+                var searchValue = $('#searchInput').val().toLowerCase();
+                var categoryValue = $('#categorySelect').val();
+                var noDataFound = true;
+
+                $('#orderTable tbody tr').each(function () {
+                    var rowText = $(this).text().toLowerCase();
+                    var rowCategory = $(this).find('.orderStatus').text();
+
+                    var matchesSearch = rowText.indexOf(searchValue) > -1;
+                    var matchesCategory = (categoryValue === "All") || (rowCategory === categoryValue);
+
+                    if (matchesSearch && matchesCategory) {
+                        $(this).show();
+                        noDataFound = false;
+                    } else {
+                        $(this).hide();
+                    }
+                });
+
+                if (noDataFound) {
+                    $('#noDataMessage').show();
+                } else {
+                    $('#noDataMessage').hide();
+                }
+            }
+
+            // Contact distributor Button Handler
+            $(document).on('click', '.contactDistributorBtn', function () {
+                var distributorId = $(this).data('distributor-id');
+                // get distributor email from database and open email interface
+                $.ajax({
+                    url: '/Admin/GetUserEmail', // Your endpoint to get the distributor email
+                    type: 'GET',
+                    data: { userId: distributorId },
+                    success: function (response) {
+                        if (response.success && response.email) {
+                            var email = response.email;
+                            window.location.href = 'mailto:' + email;
+                        } else {
+                            alert('Distributor email not found.');
+                        }
+                    },
+                    error: function () {
+                        alert('Error retrieving distributor email.');
+                    }
+                });
+
+            });
+
+            /*$('.cancelOrderBtn').on('click', function () {
+                var orderId = $(this).data('order-id');
+                var confirmation = confirm("Are you sure you want to cancel this order?");
+                if (confirmation) {
+                    updateOrderStatus(orderId, 'Cancelled', function (success) {
+                        if (success) {
+                            var actionsCell = $('#orderActions_' + orderId);
+                            actionsCell.empty().html(`
+                                        <button type = "button" class= "btn btn-primary btn-sm me-1 orderDetailsBtn" data - order - id="${orderId}">Order Details</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" disabled>Cancelled</button>
+                                `);
+                            location.reload();
+                        }
+                    });
+                }
+            });*/
+
+            $('.cancelOrderBtn').on('click', function () {
+                var orderId = $(this).data('order-id');
+                var refundAmount = parseFloat($(this).data('refund-amount'));
+
+                var confirmation = confirm("Are you sure you want to cancel this order and request a refund?");
+                if (confirmation) {
+                    submitRefundRequest(refundAmount, orderId);
+                }
+            });
+
+            function submitRefundRequest(refundAmount, orderId) {
+                $.ajax({
+                    url: '/Admin/SubmitRefundRequest',
+                    type: 'POST',
+                    data: { refundAmount: refundAmount, orderId: orderId },
+                    success: function (response) {
+                        if (response.success) {
+                            updateOrderStatus(orderId, 'Refund Pending', function (success) {
+                                if (success) {
+                                    location.reload();
+                                } else {
+                                    alert('Failed to update order status to Refund Pending.');
+                                }
+                            });
+                        } else {
+                            alert('Failed to submit refund request.');
+                        }
+                    },
+                    error: function () {
+                        alert('An error occurred while submitting refund request.');
+                    }
+                });
+            }
+
+            function updateOrderStatus(orderId, status, callback) {
+                $.ajax({
+                    url: '/Admin/UpdateOrderStatus',
+                    type: 'POST',
+                    data: { orderId: orderId, status: status },
+                    success: function (response) {
+                        if (response.success) {
+                            // Reload the table or update UI as needed
+                            callback(true);
+                        } else {
+                            alert('Failed to update order status.');
+                            callback(false);
+                        }
+                    },
+                    error: function () {
+                        alert('An error occurred while updating order status.');
+                        callback(false);
+                    }
+                });
+            }
+        });
+    </script>
+}
