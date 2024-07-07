@@ -4,6 +4,27 @@
     ViewData["Title"] = "Refund Management";
 }
 
+<style>
+    .image-preview-container {
+        width: 250px; 
+        height: 250px;
+        overflow: hidden;
+        border: 1px solid #ddd;
+        margin-bottom: 10px; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto; 
+        margin-right: auto;
+    }
+
+    .image-preview-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+</style
+
 <input type="hidden" id="currentUrl" value="@Url.Action("RefundManagement", "Admin")" />
 <div class="pc-content">
     <!-- Breadcrumb section -->
@@ -38,7 +59,7 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table id="refundsTable" class="table table-bordered table-striped table-hover" style="width:100%">
+                        <table id="refundTable" class="table table-bordered table-striped table-hover" style="width:100%">
                             <thead class="thead-light">
                                 <tr>
                                     <th scope="col" style="width: 5%">No</th>
@@ -58,7 +79,7 @@
                                     {
                                         <tr>
                                             <td>@index</td>
-                                            <td>@refund.RefundId</td>
+                                            <td type="button" class="btn btn-primary btn-sm me-1 w-100 viewDetailsBtn" data-refund-id="@refund.RefundId">@refund.RefundId</td>
                                             <td>@refund.OrderId</td>
                                             <td>@refund.RequestDate</td>
                                             <td>@refund.RefundAmount</td>
@@ -94,8 +115,74 @@
     <!-- End Main Content section -->
 </div>
 
+<!-- Order Details Modal -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="stockDetailsModalLabel">Stock Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <img id="stockImage" class="image-preview-container" src="" alt="Stock Image" style="max-width: 100%;" />
+                <p><strong>Item Name:</strong> <span id="purchaseItemName"></span></p>
+                <p><strong>Quantity:</strong> <span id="purchaseQuantity"></span></p>
+                <p><strong>Total Amount:</strong> <span id="refundAmount"></span></p>
+                <p><strong>Refund Bank:</strong> <span id="refundBank"></span></p>
+                <p><strong>Bank Account No.:</strong> <span id="bankAccNum"></span></p>
+                <p><strong>Duitnow QR Code:</strong></p>
+                <img id="qrImage" class="image-preview-container" src="" alt="DuitNow QR" style="max-width: 100%;" />
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
+        function openStockDetailsModal(refundId) {
+            $.ajax({
+                url: '/Admin/GetRefundStockDetails',
+                type: 'GET',
+                data: { refundId: refundId },
+                success: function (response) {
+                    if (response.success) {
+                        // Populate the modal with stock details
+                        $('#purchaseItemName').text(response.stock.itemName);
+                        $('#purchaseQuantity').text(response.orderDetails.quantity);
+                        $('#refundAmount').text(response.orderDetails.totalAmount);
+                        $('#refundBank').text(response.refundRequest.refundBank);
+                        $('#bankAccNum').text(response.refundRequest.bankAccNum);
+                        $('#qrImage').attr('src', response.refundRequest.qrImage);
+                        $('#stockImage').attr('src', response.stock.imgDownloadURL);
+
+                        // Show the modal
+                        $('#orderDetailsModal').modal('show');
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function () {
+                    alert('An error occurred while fetching stock details.');
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            // Filter table based on search input
+            $('#searchInput').on('keyup', function () {
+                var value = $(this).val().toLowerCase();
+                $('#refundTable tbody tr').filter(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                });
+            });
+
+            // View Details Button Handler
+            $('.viewDetailsBtn').on('click', function () {
+                var refundId = $(this).data('refund-id');
+                openStockDetailsModal(refundId);
+            });
+        });
+
         document.addEventListener("DOMContentLoaded", function () {
             document.querySelectorAll(".approveRequestBtn, .denyRequestBtn").forEach(button => {
                 button.addEventListener("click", function () {

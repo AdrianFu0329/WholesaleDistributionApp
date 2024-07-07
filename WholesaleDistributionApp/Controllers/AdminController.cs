@@ -811,17 +811,35 @@ namespace WholesaleDistributionApp.Controllers
                 return Json(new { success = false, message = "Refund not found." });
             }
 
+            var order = await _context.Orders.FindAsync(Guid.Parse(refund.OrderId));
+            if (order == null)
+            {
+                return Json(new { success = false, message = "Order not found." });
+            }
+
+            // Update refund status
             refund.RefundStatus = request.Status;
+
+            // Update order status based on refund status
+            if (request.Status == "Approved")
+            {
+                order.OrderStatus = "Cancelled";
+            }
+            else if (request.Status == "Denied")
+            {
+                order.OrderStatus = "Accepted";
+            }
 
             try
             {
                 _context.RefundRequest.Update(refund);
+                _context.Orders.Update(order);
                 await _context.SaveChangesAsync();
                 return Json(new { success = true });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = $"Error updating refund status: {ex.Message}" });
+                return Json(new { success = false, message = $"Error updating status: {ex.Message}" });
             }
         }
 
@@ -830,5 +848,77 @@ namespace WholesaleDistributionApp.Controllers
             public string RefundId { get; set; }
             public string Status { get; set; }
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetRefundStockDetails(string refundId)
+        {
+            // Assuming you have a context named _context
+            var refundRequest = await _context.RefundRequest.FindAsync(refundId);
+            if (refundRequest == null)
+            {
+                return Json(new { success = false, message = "Refund request not found." });
+            }
+
+            var orderDetails = await _context.OrderDetails
+                .Where(od => od.OrderId.ToString() == refundRequest.OrderId)
+                .FirstOrDefaultAsync();
+
+            if (orderDetails == null)
+            {
+                return Json(new { success = false, message = "Order details not found." });
+            }
+
+            var stock = await _context.DistributorStock
+                .Where(ds => ds.StockId == orderDetails.StockId)
+                .FirstOrDefaultAsync();
+
+            if (stock == null)
+            {
+                return Json(new { success = false, message = "Stock details not found." });
+            }
+
+            var order = await _context.Orders
+                .Where(o => o.OrderId.ToString() == refundRequest.OrderId)
+                .FirstOrDefaultAsync();
+
+            if (order == null)
+            {
+                return Json(new { success = false, message = "Order not found." });
+            }
+
+            var userInfo = await _context.UserInfo
+                .Where(ui => ui.UserId == stock.StockDistributorId)
+                .FirstOrDefaultAsync();
+
+            if (userInfo == null)
+            {
+                return Json(new { success = false, message = "User information not found." });
+            }
+
+            var response = new
+            {
+                success = true,
+                stock = new
+                {
+                    itemName = stock.ItemName,
+                    description = stock.Description,
+                    imgDownloadURL = stock.ImgDownloadURL
+                },
+                orderDetails = new
+                {
+                    quantity = orderDetails.Quantity,
+                    totalAmount = orderDetails.Subtotal
+                },
+                refundRequest = new
+                {
+                    refundBank = userInfo.BankName,
+                    bankAccNum = userInfo.BankAccNo,
+                    qrImage = userInfo.QRImgURL
+                }
+            };
+
+            return Json(response);
+        }
+
     }
 }
