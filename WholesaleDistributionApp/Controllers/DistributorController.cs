@@ -295,7 +295,7 @@ namespace WholesaleDistributionApp.Controllers
             {
                 order.OrderId,
                 order.OrderDetailsId,
-                order.StockId,
+                StockId = order.StockId != null ? order.StockId : "No id found",
                 StockName = order.DistributorStock != null ? order.DistributorStock.ItemName : "Stock Name Not Available",
                 StockImage = order.DistributorStock != null ? order.DistributorStock.ImgDownloadURL : null,
                 order.Quantity,

@@ -103,6 +103,111 @@
         visibility: visible;
         opacity: 1;
     }
+
+    .table-responsive {
+        margin: 0 auto;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .table th, .table td {
+        vertical-align: middle;
+        text-align: center;
+    }
+
+    .details-button {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #fff;
+        color: #000;
+        border: 1px solid #ccc; /* Add a subtle border */
+        padding: 8px 12px; /* Adjust padding for a smaller button */
+        border-radius: 3px; /* Smaller border radius */
+        cursor: pointer;
+        z-index: 1001;
+        font-size: 14px; /* Adjust font size */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+        transition: background-color 0.3s, color 0.3s, transform 0.3s, box-shadow 0.3s; /* Add transitions for smoother appearance change */
+    }
+
+    .colored-border-card:hover .details-button {
+        display: block;
+    }
+
+    .details-button:hover {
+        background-color: #2689E2; /* Lighter background on hover */
+        color: #333; /* Darker text on hover */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Slightly stronger shadow on hover */
+    }
+
+    .invoice-section {
+        margin-bottom: 40px;
+        padding: 20px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background-color: #eaf3ff;
+    }
+
+    .invoice-header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+        .invoice-header h2 {
+            margin-bottom: 5px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .invoice-header h4 {
+            margin-top: 0;
+            font-size: 18px;
+            color: #555;
+        }
+
+    .invoice-table th, .invoice-table td {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    .payment-section {
+        margin-top: 20px;
+    }
+
+        .payment-section label {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+    .paymentInfo p {
+        margin: 0;
+    }
+
+    .paymentInfo img {
+        margin-top: 10px;
+    }
+
+    .image-preview-container {
+        width: 250px;
+        height: 250px;
+        overflow: hidden;
+        border: 1px solid #ddd;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+        .image-preview-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 </style>
 
 <input type="hidden" id="currentUrl" value="@Url.Action("ViewProducts", "Retailer")" />
@@ -122,7 +227,9 @@
                         <button type="submit" class="btn btn-primary">Search</button>
                     </form>
                     <!-- View Cart Button -->
-                    <button type="button" class="btn btn-secondary mb-4 ti ti-shopping-cart" data-bs-toggle="modal" data-bs-target="#viewCartModal">View Cart</button>
+                    <button type="button" class="btn btn-secondary mb-4 me-2" data-bs-toggle="modal" data-bs-target="#viewCartModal">
+                        <span><i class="ti ti-shopping-cart me-2"></i></span>View Cart
+                    </button>
                 </div>
                 <div>
                     <div class="card-container mt-4 mb-4">
@@ -130,7 +237,13 @@
                         {
                             foreach (var stock in Model)
                             {
-                                <div class="colored-border-card" data-stock-id="@stock.StockId">
+                                <div class="colored-border-card" data-stock-id="@stock.StockId"
+                                     data-item-name="@stock.ItemName"
+                                     data-description="@stock.Description"
+                                     data-quantity="@stock.Quantity"
+                                     data-single-price="@stock.SinglePrice"
+                                     data-distributor="@stock.Distributor?.UserName"
+                                     data-img-url="@stock.ImgDownloadURL">
                                     <div class="card-body">
                                         <img src="@stock.ImgDownloadURL" alt="Stock Image" />
                                         <div class="text-wrapper">
@@ -143,6 +256,7 @@
                                                 <span class="tooltip-text">Add to Cart</span>
                                             </button>
                                         </div>
+                                        <button class="details-button" type="button" data-bs-toggle="modal" data-bs-target="#productDetailsModal" data-stock-id="@stock.StockId">See Details</button>
                                     </div>
                                 </div>
                             }
@@ -158,80 +272,386 @@
             </div>
         </div>
     </div>
+
+    <!-- Cart Modal -->
+    <div class="modal fade" id="viewCartModal" tabindex="-1" aria-labelledby="viewCartModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewCartModalLabel">Your Cart</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="cartContainer" class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Item Name</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>Total (RM)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cartTableBody">
+                                <!-- Items will be inserted here dynamically -->
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="4" class="text-end">Total Amount:</th>
+                                    <th id="totalAmountCell">0.00</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <!-- Checkout content hidden initially -->
+                    <div id="checkoutContent" style="display: none;">
+                        <div id="checkoutInvoice"></div>
+                        <hr>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" id="proceedBtn" class="btn btn-primary">Proceed</button>
+                    <button type="button" id="payNowBtn" class="btn btn-success" style="display: none;">Pay Now</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Details Modal -->
+    <div class="modal fade" id="productDetailsModal" tabindex="-1" aria-labelledby="productDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productDetailsModalLabel">Product Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="productDetailsBody">
+                    <!-- Product details will be populated here dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- End Main Content section -->
 </div>
 
 @section Scripts {
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
+        $(document).ready(function () {
             const cart = [];
 
-            document.querySelectorAll('.cart-button').forEach(button => {
-                button.addEventListener('click', function (event) {
-                    event.stopPropagation();
-                    const card = this.closest('.colored-border-card');
-                    card.classList.toggle("selected");
-                    const stockId = card.getAttribute("data-stock-id");
-                    const stock = getStockDetails(stockId);
+            $('.cart-button').on('click', function (event) {
+                event.stopPropagation();
+                const card = $(this).closest('.colored-border-card');
+                card.toggleClass("selected");
+                const stockId = card.data("stock-id");
+                const stock = getStockDetails(stockId);
 
-                    if (card.classList.contains("selected")) {
-                        cart.push(stock);
-                    } else {
-                        const index = cart.findIndex(item => item.Id === stock.Id);
+                if (card.hasClass("selected")) {
+                    cart.push(stock);
+                } else {
+                    const index = cart.findIndex(item => item.StockId === stock.StockId);
+                    if (index > -1) {
+                        cart.splice(index, 1);
+                    }
+                }
+            });
+
+            $('.cart-button').on('mouseenter', function () {
+                const card = $(this).closest('.colored-border-card');
+                const tooltipText = card.find('.tooltip-text');
+                if (card.hasClass("selected")) {
+                    tooltipText.text("Remove");
+                } else {
+                    tooltipText.text("Add to Cart");
+                }
+            });
+
+            $('.details-button').on('click', function () {
+                const stockId = $(this).data("stock-id");
+                const stockDetails = getStockDetails(stockId);
+                populateProductDetailsModal(stockDetails);
+            });
+
+            $('#proceedBtn').on('click', function () {
+
+                var invoiceHtml = generateInvoiceHtml(cart);
+
+                $('#viewCartModal .modal-dialog').removeClass('modal-dialog-centered').addClass('modal-fullscreen');
+                $('#cartContainer').hide();
+                $('#viewCartModalLabel').text('Checkout Payment');
+                $('#checkoutContent').show();
+                $('#checkoutInvoice').html(invoiceHtml);
+
+                $('#proceedBtn').hide();
+                $('#payNowBtn').show();
+            });
+
+            $(document).on('change', '#paymentMethodSelect', function () {
+                var selectedOption = $(this).val();
+
+                $('.paymentInfo').hide();
+
+                if (selectedOption === 'bankTransfer') {
+                    $('#bankTransferInfo').show();
+                } else if (selectedOption === 'qrCode') {
+                    $('#qrCodeInfo').show();
+                }
+            });
+
+            $('#viewCartModal').on('hidden.bs.modal', function () {
+                location.reload();
+            });
+
+            $('#payNowBtn').on('click', function () {
+                var proofOfPaymentFile = $('#proofOfPayment')[0].files[0];
+                
+                if (!proofOfPaymentFile) {
+                    alert('Please upload proof of payment.');
+                    return;
+                }
+                console.log('poP:', proofOfPaymentFile);
+                console.log('Order Details:', orderDetails);
+
+                var formData = new FormData();
+                formData.append('proofOfPayment', proofOfPaymentFile);
+                formData.append('orderDetails', JSON.stringify(orderDetails));
+
+                $.ajax({
+                    url: '/Retailer/SubmitPayment',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        if (response.success) {
+                            alert('Payment submitted successfully.');
+                            $('#viewCartModal').modal('hide');
+                        } else {
+                            alert('Failed to submit payment: ' + response.message);
+                        }
+                    },
+                    error: function () {
+                        alert('Error submitting payment.');
+                    }
+                });
+            });
+
+            var orderDetails = [];
+
+            function generateInvoiceHtml(cart) {
+                var invoiceHtml = '';
+
+                invoiceHtml += '<div class="invoice-section">';
+                invoiceHtml += '  <div class="invoice-header">';
+                invoiceHtml += '    <h2>Invoice</h2>';
+                invoiceHtml += '  </div>';
+
+                invoiceHtml += ' <div class="table-responsive">';
+                invoiceHtml += '  <table class="table table-bordered table-striped invoice-table">';
+                invoiceHtml += '    <thead>';
+                invoiceHtml += '      <tr>';
+                invoiceHtml += '        <th>Item Name</th>';
+                invoiceHtml += '        <th>Quantity</th>';
+                invoiceHtml += '        <th>Price per Item</th>';
+                invoiceHtml += '        <th>Total</th>';
+                invoiceHtml += '      </tr>';
+                invoiceHtml += '    </thead>';
+                invoiceHtml += '    <tbody>';
+
+                var totalAmount = 0;
+
+                cart.forEach(function (item) {
+                    var totalPrice = item.Quantity * item.SinglePrice;
+                    totalAmount += totalPrice;
+
+                    orderDetails.push({
+                        WarehouseStockId: item.StockId,
+                        Quantity: item.Quantity,
+                        PricePerItem: item.SinglePrice,
+                        Subtotal: totalPrice,
+                    });
+
+                    invoiceHtml += '      <tr>';
+                    invoiceHtml += '        <td>' + item.ItemName + '</td>';
+                    invoiceHtml += '        <td>' + item.Quantity + '</td>';
+                    invoiceHtml += '        <td>RM ' + item.SinglePrice.toFixed(2) + '</td>';
+                    invoiceHtml += '        <td>RM ' + totalPrice.toFixed(2) + '</td>';
+                    invoiceHtml += '      </tr>';
+                });
+
+                invoiceHtml += '    </tbody>';
+                invoiceHtml += '    <tfoot>';
+                invoiceHtml += '      <tr>';
+                invoiceHtml += '        <th colspan="3">Total Amount:</th>';
+                invoiceHtml += '        <td id="totalAmountCell">RM ' + totalAmount.toFixed(2) + '</td>';
+                invoiceHtml += '      </tr>';
+                invoiceHtml += '    </tfoot>';
+                invoiceHtml += '  </table>';
+                invoiceHtml += '  </div>';
+
+                invoiceHtml += '  <div class="payment-section">';
+                invoiceHtml += '    <label for="paymentMethodSelect">Payment Method</label>';
+                invoiceHtml += '    <select class="form-select paymentMethodSelect" id="paymentMethodSelect" style="width: 40%;">';
+                invoiceHtml += '      <option value="" selected>--Select Payment Method--</option>';
+                invoiceHtml += '      <option value="bankTransfer">Bank Account Transfer</option>';
+                invoiceHtml += '      <option value="qrCode">QR Code</option>';
+                invoiceHtml += '    </select>';
+
+                invoiceHtml += '    <div id="bankTransferInfo" class="paymentInfo mt-4" style="display:none;">';
+                invoiceHtml += '      <p><strong>Bank Name:</strong> Dummy Bank</p>';
+                invoiceHtml += '      <p><strong>Account Number:</strong> 1234567890</p>';
+                invoiceHtml += '      <p><strong>Account Holder:</strong> Dummy Account Holder</p>';
+                invoiceHtml += '    </div>';
+
+                invoiceHtml += '    <div id="qrCodeInfo" class="paymentInfo" style="display:none;">';
+                invoiceHtml += '      <div class="image-preview-container">';
+                invoiceHtml += '        <img src="../assets/images/user/avatar-2.jpg" alt="QR Code">';
+                invoiceHtml += '      </div>';
+                invoiceHtml += '    </div>';
+
+                invoiceHtml += '    <label class="mt-4" for="proofOfPayment">Upload Proof of Payment</label>';
+                invoiceHtml += '    <input class="form-control proofOfPayment" type="file" id="proofOfPayment" style="width: 40%;">';
+                invoiceHtml += '  </div>';
+
+                invoiceHtml += '</div>';
+
+                return invoiceHtml;
+            }
+
+            function getTotalAmount(items) {
+                var total = 0;
+                items.forEach(function (item) {
+                    total += item.total;
+                });
+                return total;
+            }
+
+            function getStockDetails(stockId) {
+                const stockElement = $(`.colored-border-card[data-stock-id="${stockId}"]`);
+                const itemName = stockElement.data("item-name");
+                const description = stockElement.data("description");
+                const quantity = stockElement.data("quantity");
+                const singlePrice = stockElement.data("single-price");
+                const distributorName = stockElement.data("distributor");
+                const imgDownloadURL = stockElement.data("img-url");
+
+                return {
+                    StockId: stockId,
+                    ItemName: itemName,
+                    Description: description,
+                    Quantity: quantity,
+                    SinglePrice: singlePrice,
+                    Distributor: distributorName,
+                    ImgDownloadURL: imgDownloadURL
+                };
+            }
+
+            function displayCart(cart) {
+                const cartTableBody = $("#cartTableBody");
+                cartTableBody.empty();
+                let totalAmount = 0;
+
+                if (cart.length > 0) {
+                    cart.forEach(item => {
+                        const totalPrice = item.Quantity * item.SinglePrice;
+                        const cartRow = `
+                                    <tr>
+                                        <td><input type="checkbox" class="selectCartItem" data-stock-id="${item.StockId}" checked /></td>
+                                        <td>${item.ItemName}</td>
+                                        <td><input type="number" class="form-control quantityInput" value="${item.Quantity}" min="1" max="${item.Quantity}" data-stock-id="${item.StockId}" /></td>
+                                        <td>${item.SinglePrice}</td>
+                                        <td class="totalCell">${totalPrice.toFixed(2)}</td>
+                                    </tr>
+                                `;
+                        cartTableBody.append(cartRow);
+                        totalAmount += totalPrice;
+                    });
+                } else {
+                    const emptyRow = `<tr><td colspan="5" class="text-center">No items in cart.</td></tr>`;
+                    cartTableBody.append(emptyRow);
+                }
+
+                updateTotalAmount(totalAmount);
+
+                // Add event listeners to quantity inputs
+                $('.quantityInput').on('change', function () {
+                    const $this = $(this);
+                    const stockId = $this.data('stock-id');
+                    const item = cart.find(item => item.StockId === stockId);
+
+                    if (item) {
+                        const enteredQuantity = parseInt($this.val(), 10);
+                        const maxQuantity = item.Quantity;
+
+                        if (enteredQuantity > maxQuantity) {
+                            $this.val(maxQuantity); // Reset to max quantity
+                            alert('Entered quantity exceeds available stock. Resetting to maximum allowed.');
+                        }
+
+                        item.Quantity = parseInt($this.val(), 10); // Update item quantity
+                        const totalPrice = item.Quantity * item.SinglePrice;
+                        $this.closest('tr').find('.totalCell').text(totalPrice.toFixed(2));
+
+                        recalculateTotalAmount(cart);
+                    }
+                });
+
+                // Add event listeners to select checkboxes
+                $('.selectCartItem').on('change', function () {
+                    const stockId = $(this).data('stock-id');
+                    const isChecked = $(this).prop('checked');
+
+                    if (!isChecked) {
+                        const index = cart.findIndex(item => item.StockId === stockId);
                         if (index > -1) {
                             cart.splice(index, 1);
                         }
+                        $(this).closest('tr').remove();
+                        recalculateTotalAmount(cart);
                     }
                 });
-
-                button.addEventListener('mouseenter', function () {
-                    const card = this.closest('.colored-border-card');
-                    const tooltipText = card.querySelector('.tooltip-text');
-                    if (card.classList.contains("selected")) {
-                        tooltipText.textContent = "Remove";
-                    } else {
-                        tooltipText.textContent = "Add to Cart";
-                    }
-                });
-            });
-
-            document.getElementById("viewCartButton").addEventListener("click", function () {
-                displayCart(cart);
-            });
-        });
-
-        function getStockDetails(stockId) {
-            const stockElement = document.querySelector(`.colored-border-card[data-stock-id="${stockId}"]`);
-            const itemName = stockElement.querySelector(".card-title").textContent.trim();
-            const singlePrice = stockElement.querySelector(".card-text strong").textContent.trim();
-            const imgDownloadURL = stockElement.querySelector("img").src;
-
-            return { Id: stockId, ItemName: itemName, SinglePrice: singlePrice, ImgDownloadURL: imgDownloadURL };
-        }
-
-        function displayCart(cart) {
-            const cartContainer = document.getElementById("cartContainer");
-            cartContainer.innerHTML = "";
-
-            if (cart.length > 0) {
-                cart.forEach(item => {
-                    const cartItem = document.createElement("div");
-                    cartItem.className = "cart-item";
-                    cartItem.innerHTML = `
-                        <h5>${item.ItemName}</h5>
-                        <p>${item.SinglePrice}</p>
-                        <img src="${item.ImgDownloadURL}" alt="Stock Image" style="width: 50px; height: 50px; object-fit: cover;">
-                    `;
-                    cartContainer.appendChild(cartItem);
-                });
-            } else {
-                cartContainer.innerHTML = "<p>No items in cart.</p>";
             }
 
-            cartContainer.style.display = "block";
-        }
-    </script>
-}
+            function updateTotalAmount(totalAmount) {
+                $('#totalAmountCell').text(totalAmount.toFixed(2));
+            }
 
-<!-- Cart Container -->
-<div id="cartContainer" class="cart-container"></div>
+            function recalculateTotalAmount(cart) {
+                let totalAmount = 0;
+                cart.forEach(item => {
+                    const totalPrice = item.Quantity * item.SinglePrice;
+                    totalAmount += totalPrice;
+                });
+
+                updateTotalAmount(totalAmount);
+            }
+
+            $('button[data-bs-target="#viewCartModal"]').on('click', function () {
+                if (cart.length === 0) {
+                    location.reload();
+                    alert('No items selected. Please add items to your cart first.');
+                }
+                displayCart(cart);
+            });
+
+            function populateProductDetailsModal(stockDetails) {
+                const modalBody = $('#productDetailsBody');
+                modalBody.html(`
+                            <p><strong>Item Name:</strong> ${stockDetails.ItemName}</p>
+                            <p><strong>Image:</strong> <img src="${stockDetails.ImgDownloadURL}" alt="Stock Image" style="max-width: 30%; height: auto;"></p>
+                            <p><strong>Item Description:</strong> ${stockDetails.Description}</p>
+                            <p><strong>Available Quantity:</strong> ${stockDetails.Quantity}</p>
+                            <p><strong>Single Price:</strong> RM${stockDetails.SinglePrice}</p>
+                            <p><strong>Distributor:</strong> ${stockDetails.Distributor}</p>
+                        `);
+            }
+        });
+    </script>
+
+
+}

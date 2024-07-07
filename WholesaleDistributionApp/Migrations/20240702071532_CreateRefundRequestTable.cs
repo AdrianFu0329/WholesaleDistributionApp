@@ -16,6 +16,7 @@ namespace WholesaleDistributionApp.Migrations
                 table: "WarehouseStock",
                 type: "nvarchar(450)",
                 nullable: false,
+                defaultValue: "",
                 oldClrType: typeof(string),
                 oldType: "nvarchar(max)");
 
@@ -23,7 +24,7 @@ namespace WholesaleDistributionApp.Migrations
                 name: "StockId",
                 table: "OrderDetails",
                 type: "nvarchar(450)",
-                nullable: false,
+                nullable: true,
                 oldClrType: typeof(string),
                 oldType: "nvarchar(max)");
 

@@ -61,7 +61,7 @@
         height: 100%;
         object-fit: cover;
     }
-</style
+</style>
 
 <input type="hidden" id="currentUrl" value="@Url.Action("PurchaseStock", "Admin")" />
 <div class="pc-content">
@@ -204,30 +204,6 @@
                 <div id="checkoutContent" style="display: none;">
                     <div id="checkoutInvoice"></div>
                     <hr>
-                    <!-- Payment method selection -->
-@*                     <div class="mb-3">
-                        <label for="paymentMethodSelect" class="form-label">Payment Method</label>
-                        <select class="form-select" id="paymentMethodSelect">
-                            <option value="" selected>-- Select Payment Method --</option>
-                            <option value="bankTransfer">Bank Account Transfer</option>
-                            <option value="qrCode">QR Code</option>
-                        </select>
-                    </div> *@
-                    <!-- Conditional payment information -->
-@*                     <div id="paymentInfo">
-                        <div id="bankTransferInfo" style="display: none; margin-bottom:20px">
-                            <p><strong>Bank Name:</strong> ABC Bank</p>
-                            <p><strong>Account Number:</strong> 1234567890</p>
-                            <p><strong>Account Holder:</strong> John Doe</p>
-                        </div>
-                        <div id="qrCodeInfo" style="display: none; margin-bottom:20px">
-                            <img id="qrCodeImg" src="~/assets/images/user/avatar-2.jpg" alt="QR Code" style="max-width: 100%;">
-                        </div>
-                    </div> *@
-@*                     <div class="mb-3">
-                        <label for="proofOfPayment" class="form-label">Upload Proof of Payment</label>
-                        <input class="form-control" type="file" id="proofOfPayment">
-                    </div> *@
                 </div>
             </div>
             <div class="modal-footer">
@@ -568,7 +544,7 @@
                     if (!groupedOrderDetails[stockDistributorId]) {
                         groupedOrderDetails[stockDistributorId] = [];
                     }
-                    groupedOrderDetails[stockDistributorId].push({ stockId, quantity, pricePerItem, subtotal, stockDistributorId, stockDistributorName });
+                        groupedOrderDetails[stockDistributorId].push({ stockId, quantity, pricePerItem, subtotal, stockDistributorId, stockDistributorName });
                 });
 
                 if (!valid) {
@@ -596,12 +572,19 @@
                         alert('File size exceeds 5MB limit for Distributor ' + stockDistributorName);
                         return;
                     }
-
+                    // console.log(stockDistributorName);
+                    // console.log(stockDistributorId);
                     var formData = new FormData();
                     formData.append('orderDetails', JSON.stringify(groupedOrderDetails[stockDistributorId]));
                     formData.append('proofOfPayment', proofOfPaymentFile);
+                    formData.append('stockDistributorId', stockDistributorId);
                     formData.append('stockDistributorName', stockDistributorName);
                     formDataList.push({ formData, stockDistributorName });
+
+                    //             console.log("FormData contents for distributor:", stockDistributorName);
+                    // formData.forEach((value, key) => {
+                    //     console.log(key + ': ' + value);
+                    // });
                 }
 
                 var successfulOrders = 0;
