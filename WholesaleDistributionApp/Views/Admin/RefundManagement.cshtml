@@ -58,7 +58,7 @@
                                     {
                                         <tr>
                                             <td>@index</td>
-                                            <td type="button" class="btn btn-primary btn-sm me-1 w-100 viewDetailsBtn" data-stock-id="@refund.RefundId">@refund.RefundId</td>
+                                            <td>@refund.RefundId</td>
                                             <td>@refund.OrderId</td>
                                             <td>@refund.RequestDate</td>
                                             <td>@refund.RefundAmount</td>
@@ -81,7 +81,7 @@
                                 else
                                 {
                                     <tr>
-                                        <td colspan="9" class="text-center">No Refund Requests as of now</td>
+                                        <td colspan="7" class="text-center">No Refund Requests as of now</td>
                                     </tr>
                                 }
                             </tbody>
@@ -100,8 +100,6 @@
             document.querySelectorAll(".approveRequestBtn, .denyRequestBtn").forEach(button => {
                 button.addEventListener("click", function () {
                     var refundId = this.getAttribute("data-refund-id");
-                    console.log("Refund ID:", refundId); // Debugging line
-
                     var action = this.classList.contains("approveRequestBtn") ? "approve" : "deny";
                     var statusText = action === "approve" ? "Approved" : "Denied";
                     var confirmationMessage = "Are you sure you want to " + action + " this refund request?";
@@ -119,7 +117,6 @@
                         })
                             .then(response => response.json())
                             .then(data => {
-                                console.log(data); // Debugging line
                                 if (data.success) {
                                     // Update the status cell
                                     statusCell.textContent = statusText;

@@ -82,7 +82,7 @@ namespace WholesaleDistributionApp.Controllers
             return View(stocks.ToList());
         }
 
-        /*public async Task<IActionResult> RefundManagement(string searchString)
+        public async Task<IActionResult> RefundManagement(string searchString)
         {
             // Load Warehouse Stocks
             var refunds = _context.RefundRequest.AsQueryable();
@@ -96,7 +96,7 @@ namespace WholesaleDistributionApp.Controllers
             refunds = refunds.OrderByDescending(r => r.RequestDate);
 
             return View(await refunds.ToListAsync());
-        }*/
+        }
 
         public IActionResult UserManagement()
         {
@@ -803,18 +803,15 @@ namespace WholesaleDistributionApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateRefundStatus([FromBody] RefundStatusUpdateModel model)
+        public async Task<IActionResult> UpdateRefundStatus([FromBody] UpdateRefundStatusRequest request)
         {
-            var refundId = model.RefundId;
-            var status = model.Status;
-
-            var refund = await _context.RefundRequest.FindAsync(refundId);
+            var refund = await _context.RefundRequest.FindAsync(request.RefundId);
             if (refund == null)
             {
                 return Json(new { success = false, message = "Refund not found." });
             }
 
-            refund.RefundStatus = status;
+            refund.RefundStatus = request.Status;
 
             try
             {
@@ -826,6 +823,12 @@ namespace WholesaleDistributionApp.Controllers
             {
                 return Json(new { success = false, message = $"Error updating refund status: {ex.Message}" });
             }
+        }
+
+        public class UpdateRefundStatusRequest
+        {
+            public string RefundId { get; set; }
+            public string Status { get; set; }
         }
     }
 }
