@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace WholesaleDistributionApp.Views.Admin
 {
-    public class OrderManagementModel : PageModel
+    public class DistributorOrderManagementModel : PageModel
     {
         public void OnGet()
         {

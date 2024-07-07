@@ -1,5 +1,4 @@
-﻿@page
-@model WholesaleDistributionApp.Views.Admin.RetailerOrderManagementModel
+﻿@model List<WholesaleDistributionApp.Models.Order>
 @{
     ViewData["Title"] = "Manage Retailer Order";
 }
@@ -39,6 +38,8 @@
                                 <option value="Accepted">Accepted</option>
                                 <option value="Shipped">Shipped</option>
                                 <option value="Cancelled">Cancelled</option>
+                                <option value="Refund Pending">Refund Pending</option>
+                                <option value="Completed">Completed</option>
                             </select>
                         </div>
                         <input type="text" name="searchString" id="searchInput" class="form-control me-2" placeholder="Search by Order ID" value="@ViewData["CurrentFilter"]">
@@ -46,7 +47,103 @@
                     </form>
                 </div>
                 <div class="card-body">
-                    
+                    <div class="table-responsive">
+                        <table id="orderTable" class="table table-bordered table-striped table-hover" style="width:100%">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th scope="col" style="width: 5%">No</th>
+                                    <th scope="col">Order ID</th>
+                                    <th scope="col">Order Date and Time</th>
+                                    <th scope="col">Total Amount</th>
+                                    <th scope="col">Order Status</th>
+                                    <th scope="col">Proof of Payment</th>
+                                    <th scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model != null && Model.Count > 0)
+                                {
+                                    int index = 1;
+                                    foreach (var order in Model)
+                                    {
+                                        <tr>
+                                            <td>@index</td>
+                                            <td>@order.OrderId</td>
+                                            <td>@order.OrderDate</td>
+                                            <td>RM @order.TotalAmount</td>
+                                            <td class="orderStatus" data-order-id="@order.OrderId">@order.OrderStatus</td>
+                                            <td>
+                                                <button type="button" class="btn btn-primary btn-sm me-1 viewReceiptBtn" data-receipt-url="@order.PaymentReceiptURL">
+                                                    View Receipt
+                                                </button>
+                                            </td>
+                                            <td id="orderActions_@order.OrderId">
+                                                <div class="btn-group" role="group">
+                                                    <button type="button" class="btn btn-primary btn-sm me-1 orderDetailsBtn" data-order-id="@order.OrderId">
+                                                        Order Details
+                                                    </button>
+                                                    @if (order.OrderStatus == "Pending")
+                                                    {
+                                                        <button type="button" class="btn btn-success btn-sm me-1 acceptOrderBtn" data-order-id="@order.OrderId">
+                                                            Accept
+                                                        </button>
+                                                        <button type="button" class="btn btn-danger btn-sm cancelOrderBtn" data-order-id="@order.OrderId">
+                                                            Cancel
+                                                        </button>
+                                                    }
+                                                    else if (order.OrderStatus == "Accepted")
+                                                    {
+                                                        <button type="button" class="btn btn-info btn-sm me-1 shipOrderBtn" data-order-id="@order.OrderId">
+                                                            Ship
+                                                        </button>
+                                                        <button type="button" class="btn btn-danger btn-sm cancelOrderBtn" data-order-id="@order.OrderId" data-refund-amount="@order.TotalAmount">
+                                                            Cancel
+                                                        </button>
+                                                    }
+                                                    else if (order.OrderStatus == "Shipped")
+                                                    {
+                                                        <button type="button" class="btn btn-info btn-sm me-1 contactRetailerBtn" data-retailer-id="@order.RetailerId">
+                                                            Contact Retailer
+                                                        </button>
+                                                    }
+                                                    else if (order.OrderStatus == "Cancelled")
+                                                    {
+                                                        <button type="button" class="btn btn-secondary btn-sm" disabled>
+                                                            Cancelled
+                                                        </button>
+                                                    }
+                                                    else if (order.OrderStatus == "Refund Pending")
+                                                    {
+                                                        <button type="button" class="btn btn-secondary btn-sm" disabled>
+                                                            Pending Refund
+                                                        </button>
+                                                    }
+                                                    else if (order.OrderStatus == "Completed")
+                                                    {
+                                                        <button type="button" class="btn btn-info btn-sm me-1 contactRetailerBtn" data-retailer-id="@order.RetailerId">
+                                                            Contact Retailer
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        index++;
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="9" class="text-center">You currently don't have any order to settle</td>
+                                    </tr>
+                                }
+                                <!-- New row for "No data available" message -->
+                                <tr id="noDataMessage" style="display: none;">
+                                    <td colspan="7" class="text-center">No data available</td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -68,10 +165,10 @@
 
 
 @section Scripts {
-@*     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    @*     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> *@
     <script>
-        /*$(document).ready(function () {
+        $(document).ready(function () {
             $('#searchInput').on('keyup', function () {
                 var value = $(this).val().toLowerCase();
                 $('#orderTable tbody tr').filter(function () {
@@ -98,20 +195,20 @@
                             response.orderDetails.forEach(function (order) {
                                 console.log(order.orderDetailsId)
                                 var orderDetailsHtml = `
-                                    <div class="order-detail row">
-                                    <div class="col-md-8"> <!-- Adjust column size as needed -->
-                                        <p>Order Details ID: <span id="orderDetailsId">${order.orderDetailsId}</span></p>
-                                        <p>Stock Name: <span id="stockName">${order.stockName}</span></p>
-                                        <p>Stock ID: <span id="stockId">${order.stockId}</span></p>
-                                        <p>Quantity: <span id="quantity">${order.quantity}</span></p>
-                                        <p>Subtotal: <span id="subtotal">${order.subtotal}</span></p>
-                                    </div>
-                                    <div class="col-md-4 text-end"> <!-- Adjust column size and alignment as needed -->
-                                        <img src="${order.stockImage}" alt="${order.stockName}" class="img-fluid">
-                                    </div>
-                                </div>
-                                <hr />
-                            `;
+                                            <div class="order-detail row">
+                                            <div class="col-md-8"> <!-- Adjust column size as needed -->
+                                                <p>Order Details ID: <span id="orderDetailsId">${order.orderDetailsId}</span></p>
+                                                <p>Stock Name: <span id="stockName">${order.stockName}</span></p>
+                                                <p>Stock ID: <span id="stockId">${order.stockId}</span></p>
+                                                <p>Quantity: <span id="quantity">${order.quantity}</span></p>
+                                                <p>Subtotal: <span id="subtotal">${order.subtotal}</span></p>
+                                            </div>
+                                            <div class="col-md-4 text-end"> <!-- Adjust column size and alignment as needed -->
+                                                <img src="${order.stockImage}" alt="${order.stockName}" class="img-fluid">
+                                            </div>
+                                        </div>
+                                        <hr />
+                                    `;
                                 console.log(orderDetailsHtml)
 
                                 $('#orderDetailsContainer').append(orderDetailsHtml);
@@ -148,22 +245,34 @@
                 if (confirmation) {
                     updateOrderStatus(orderId, 'Accepted', function (success) {
                         if (success) {
-                            console.log(`Order ${orderId} status updated to Accepted`);
-
-                            // Update table cell with new status
-                            var statusCell = $(`.orderStatus[data-order-id="${orderId}"]`);
-                            statusCell.text('Accepted');
-
-                            // Update buttons
-                            var acceptBtn = $(`.acceptOrderBtn[data-order-id="${orderId}"]`);
-                            var shipBtn = $('<button type="button" class="btn btn-info btn-sm me-1 shipOrderBtn" data-order-id="' + orderId + '">Ship</button>');
-                            acceptBtn.replaceWith(shipBtn); // Replace cancel button with ship button
                             location.reload();
                         } else {
                             console.log(`Failed to update order ${orderId} status to Accepted`);
                         }
                     });
                 }
+            });
+
+            $(document).on('click', '.contactRetailerBtn', function () {
+                var retailerId = $(this).data('retailer-id');
+                // get distributor email from database and open email interface
+                $.ajax({
+                    url: '/Admin/GetUserEmail', // Your endpoint to get the distributor email
+                    type: 'GET',
+                    data: { userId: retailerId },
+                    success: function (response) {
+                        if (response.success && response.email) {
+                            var email = response.email;
+                            window.location.href = 'mailto:' + email;
+                        } else {
+                            alert('Retailer email not found.');
+                        }
+                    },
+                    error: function () {
+                        alert('Error retrieving retailer email.');
+                    }
+                });
+
             });
 
             function filterOrders() {
@@ -200,15 +309,6 @@
                 if (confirmation) {
                     updateOrderStatus(orderId, 'Shipped', function (success) {
                         if (success) {
-                            console.log(`Order ${orderId} status updated to Shipped`);
-
-                            // Update table cell with new status
-                            var statusCell = $(`.orderStatus[data-order-id="${orderId}"]`);
-                            statusCell.text('Shipped');
-
-                            // Update buttons
-                            var shipBtn = $(`.shipOrderBtn[data-order-id="${orderId}"]`);
-                            shipBtn.remove();
                             location.reload();
                         } else {
                             console.log(`Failed to update order ${orderId} status to Shipped`);
@@ -288,6 +388,6 @@
                     }
                 });
             }
-        }); */
+        });
     </script>
-   }
+}

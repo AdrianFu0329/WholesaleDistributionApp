@@ -400,9 +400,6 @@ namespace WholesaleDistributionApp.Controllers
                 // Get the user's email
                 var userEmail = userInfo.Email;
 
-                // Log or display the user email for verification (for example purposes only)
-                Console.WriteLine($"UserId: {userId}, Email: {userEmail}");
-
                 // Return the user email
                 return Ok(new { success = true, email = userEmail });
             }
@@ -910,7 +907,7 @@ namespace WholesaleDistributionApp.Controllers
             // Load Stocks for the current Distributor
             var orders = _context.Orders
                                  .Where(s =>
-                                 s.StockDistributorId == userId)
+                                 s.OrderType == "Retailer")
                                  .AsQueryable();
 
             if (!string.IsNullOrEmpty(searchString))
@@ -926,7 +923,6 @@ namespace WholesaleDistributionApp.Controllers
             return View(orders.ToList());
         }
 
-
         public async Task<IActionResult> GetOrderDetails(string orderIdentifier)
         {
             _logger.LogInformation($"GetOrderDetails called with orderIdentifier: {orderIdentifier}");
@@ -941,6 +937,7 @@ namespace WholesaleDistributionApp.Controllers
 
             var orders = await _context.OrderDetails
                 .Include(od => od.DistributorStock)
+                .Include(od => od.WarehouseStock)
                 .Where(od => od.OrderId.ToString().ToLower() == orderIdentifier)
                 .ToListAsync();
 
@@ -954,9 +951,9 @@ namespace WholesaleDistributionApp.Controllers
             {
                 order.OrderId,
                 order.OrderDetailsId,
-                StockId = order.StockId != null ? order.StockId : "No id found",
-                StockName = order.DistributorStock != null ? order.DistributorStock.ItemName : "Stock Name Not Available",
-                StockImage = order.DistributorStock != null ? order.DistributorStock.ImgDownloadURL : null,
+                StockId = order.StockId != null ? order.StockId : (order.WarehouseStockId != null ? order.WarehouseStockId : "No id found"),
+                StockName = order.DistributorStock != null ? order.DistributorStock.ItemName : (order.WarehouseStock.ItemName != null ? order.WarehouseStock.ItemName: "Stock Name Not Available"),
+                StockImage = order.DistributorStock != null ? order.DistributorStock.ImgDownloadURL : (order.WarehouseStock.ImgDownloadURL != null ? order.WarehouseStock.ImgDownloadURL : null),
                 order.Quantity,
                 order.Subtotal
             }).ToList();
@@ -975,48 +972,61 @@ namespace WholesaleDistributionApp.Controllers
 
                 if (orderToUpdate != null)
                 {
-                    if (status == "Completed" || status == "Cancelled")
+                    if (status == "Completed")
                     {
                         var stockItems = _context.OrderDetails.Where(od => od.OrderId == orderId).ToList();
                         foreach (var item in stockItems)
                         {
-                            var stock = _context.WarehouseStock.Find(item.StockId);
-                            if (stock == null)
+                            var stock = _context.WarehouseStock.FirstOrDefault(s => s.DistributorStockId == item.StockId);
+                            if (status == "Completed")
                             {
-                                //get stock details by stock id
-                                var newStockDetails = _context.DistributorStock.Find(item.StockId);
-                                //add new stock
-                                var newStock = new WarehouseStock
+                                if (stock == null)
                                 {
-                                    StockId = Guid.NewGuid().ToString(),
-                                    DistributorStockId = newStockDetails.StockDistributorId, // Need to set here when purchase complete
-                                    ItemName = newStockDetails.ItemName,
-                                    Description = newStockDetails.Description,
-                                    Quantity = item.Quantity,
-                                    SinglePrice = newStockDetails.SinglePrice,
-                                    StockDistributorId = newStockDetails.StockDistributorId,
-                                    ImgDownloadURL = newStockDetails.ImgDownloadURL,
-                                    ForRetailerPurchase = false,
-                                };
+                                    //get stock details by stock id
+                                    var newStockDetails = _context.DistributorStock.Find(item.StockId);
+                                    //add new stock
+                                    var newStock = new WarehouseStock
+                                    {
+                                        StockId = Guid.NewGuid().ToString(),
+                                        DistributorStockId = newStockDetails.StockDistributorId, // Need to set here when purchase complete
+                                        ItemName = newStockDetails.ItemName,
+                                        Description = newStockDetails.Description,
+                                        Quantity = item.Quantity,
+                                        SinglePrice = newStockDetails.SinglePrice,
+                                        StockDistributorId = newStockDetails.StockId,
+                                        ImgDownloadURL = newStockDetails.ImgDownloadURL,
+                                        ForRetailerPurchase = false,
+                                    };
 
-                                _context.WarehouseStock.Add(newStock);
+                                    _context.WarehouseStock.Add(newStock);
 
-                            }
-                            else
-                            {
-                                if (status == "Completed")
-                                {
-                                    //add product to warehouse
-                                    stock.Quantity += item.Quantity;
                                 }
-                                else if (status == "Cancelled")
+                                else
                                 {
                                     stock.Quantity += item.Quantity;
+                                    _context.WarehouseStock.Update(stock);
                                 }
-                                _context.WarehouseStock.Update(stock);
                             }
-                            
+                        }                   
+                    }else if (status == "Accepted" || status == "Cancelled")
+                    {
+                        var stockItems = _context.OrderDetails.Where(od => od.OrderId == orderId).ToList();
+                        foreach (var item in stockItems)
+                        {
+                            var stock = _context.WarehouseStock.Find(item.WarehouseStockId);
+
+                            if (status == "Accepted")
+                            {
+                                stock.Quantity -= item.Quantity;
+                            }
+                            else if (status == "Cancelled")
+                            {
+                                stock.Quantity += item.Quantity;
+                            }
+
+                            _context.WarehouseStock.Update(stock);
                         }
+                        
                     }
 
                     // Update the order status
