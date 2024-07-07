@@ -352,5 +352,35 @@ namespace WholesaleDistributionApp.Controllers
                 return Json(new { success = false, message = ex.Message });
             }
         }
+
+        [HttpPost]
+        public IActionResult SubmitRefundRequest(double refundAmount, string orderId)
+        {
+            try
+            {
+                // Generate new GUID for RefundId
+                var refundId = Guid.NewGuid();
+
+                // Create new RefundRequest object
+                var refundRequest = new RefundRequest
+                {
+                    RefundId = refundId.ToString(),
+                    RequestDate = DateTime.UtcNow,
+                    RefundAmount = refundAmount,
+                    RefundStatus = "Pending",
+                    OrderId = orderId
+                };
+
+                // Add to DbContext and save changes
+                _context.RefundRequest.Add(refundRequest);
+                _context.SaveChanges();
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
     }
 }

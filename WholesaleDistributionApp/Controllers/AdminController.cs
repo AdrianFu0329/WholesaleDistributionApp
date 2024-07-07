@@ -82,7 +82,7 @@ namespace WholesaleDistributionApp.Controllers
             return View(stocks.ToList());
         }
 
-        public async Task<IActionResult> RefundManagement(string searchString)
+        /*public async Task<IActionResult> RefundManagement(string searchString)
         {
             // Load Warehouse Stocks
             var refunds = _context.RefundRequest.AsQueryable();
@@ -92,8 +92,11 @@ namespace WholesaleDistributionApp.Controllers
                 refunds = refunds.Where(s => s.OrderId.Contains(searchString));
             }
 
-            return View(refunds.ToList());
-        }
+            // Sort by RequestDate in descending order
+            refunds = refunds.OrderByDescending(r => r.RequestDate);
+
+            return View(await refunds.ToListAsync());
+        }*/
 
         public IActionResult UserManagement()
         {
@@ -792,6 +795,37 @@ namespace WholesaleDistributionApp.Controllers
             return Json(new { success = true });
         }
 
+        public class RefundStatusUpdateModel
+        {
+            public int RefundId { get; set; }
+            public string Status { get; set; }
+        }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateRefundStatus([FromBody] RefundStatusUpdateModel model)
+        {
+            var refundId = model.RefundId;
+            var status = model.Status;
+
+            var refund = await _context.RefundRequest.FindAsync(refundId);
+            if (refund == null)
+            {
+                return Json(new { success = false, message = "Refund not found." });
+            }
+
+            refund.RefundStatus = status;
+
+            try
+            {
+                _context.RefundRequest.Update(refund);
+                await _context.SaveChangesAsync();
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error updating refund status: {ex.Message}" });
+            }
+        }
     }
 }
