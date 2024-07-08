@@ -1,9 +1,9 @@
 ﻿@model List<WholesaleDistributionApp.Models.Order>
 @{
-    ViewData["Title"] = "Manage Order";
+    ViewData["Title"] = "Manage Distributor Order";
 }
 
-<input type="hidden" id="currentUrl" value="@Url.Action("OrderManagement", "Distributor")" />
+<input type="hidden" id="currentUrl" value="@Url.Action("DistributorOrderManagement", "Admin")" />
 
 <div class="pc-content">
     <!-- Breadcrumb section -->
@@ -30,7 +30,7 @@
                 <!-- Top Bar -->
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">My Order List</h5>
-                    <form asp-controller="Distributor" asp-action="OrderManagement" method="get" class="d-flex align-items-center mb-0">
+                    <form asp-controller="Admin" asp-action="DistributorOrderManagement" method="get" class="d-flex align-items-center mb-0">
                         <div class="me-2">
                             <select name="category" id="categorySelect" class="form-select" style="width: 200px;">
                                 <option value="All">All Categories</option>
@@ -84,26 +84,20 @@
                                                     </button>
                                                     @if (order.OrderStatus == "Pending")
                                                     {
-                                                        <button type="button" class="btn btn-success btn-sm me-1 acceptOrderBtn" data-order-id="@order.OrderId">
-                                                            Accept
-                                                        </button>
-                                                        <button type="button" class="btn btn-danger btn-sm cancelOrderBtn" data-order-id="@order.OrderId">
+                                                        <button type="button" class="btn btn-danger btn-sm cancelOrderBtn" data-order-id="@order.OrderId" data-refund-amount="@order.TotalAmount">
                                                             Cancel
                                                         </button>
                                                     }
                                                     else if (order.OrderStatus == "Accepted")
                                                     {
-                                                        <button type="button" class="btn btn-info btn-sm me-1 shipOrderBtn" data-order-id="@order.OrderId">
-                                                            Ship
-                                                        </button>
                                                         <button type="button" class="btn btn-danger btn-sm cancelOrderBtn" data-order-id="@order.OrderId" data-refund-amount="@order.TotalAmount">
                                                             Cancel
                                                         </button>
                                                     }
                                                     else if (order.OrderStatus == "Shipped")
                                                     {
-                                                        <button type="button" class="btn btn-info btn-sm me-1 contactAdminBtn">
-                                                            Contact Admin
+                                                        <button type="button" class="btn btn-success btn-sm me-1 receiveOrderBtn" data-order-id="@order.OrderId">
+                                                            Order Received
                                                         </button>
                                                     }
                                                     else if (order.OrderStatus == "Cancelled")
@@ -119,8 +113,8 @@
                                                     }
                                                     else if (order.OrderStatus == "Completed")
                                                     {
-                                                        <button type="button" class="btn btn-info btn-sm me-1 contactAdminBtn" data-retailer-id="@order.RetailerId">
-                                                            Contact Admin
+                                                        <button type="button" class="btn btn-info btn-sm me-1 contactDistributorBtn" data-distributor-id="@order.StockDistributorId">
+                                                            Contact Distributor
                                                         </button>
                                                     }
                                                 </div>
@@ -181,7 +175,7 @@
 
             function openOrderDetailsModel(orderIdentifier) {
                 $.ajax({
-                    url: '/Distributor/GetOrderDetails',
+                    url: '/Admin/GetOrderDetails',
                     type: 'GET',
                     data: { orderIdentifier: orderIdentifier },
                     success: function (response) {
@@ -237,14 +231,23 @@
                 window.open(receiptUrl, '_blank'); // Open receipt URL in a new tab
             });
 
-            // Accept Order Button Handler
-            $('.acceptOrderBtn').on('click', function () {
+            // Receive Order Button Handler
+            $('.receiveOrderBtn').on('click', function () {
                 var orderId = $(this).data('order-id');
-                var confirmation = confirm("Are you sure you want to accept this order?");
+                var confirmation = confirm("Confirm Received Order");
                 if (confirmation) {
-                    updateOrderStatus(orderId, 'Accepted', function (success) {
+                    updateOrderStatus(orderId, 'Completed', function (success) {
                         if (success) {
-                            location.reload();
+                            console.log(`Order ${orderId} status updated to Completed`);
+
+                            // Update table cell with new status
+                            var statusCell = $(`.orderStatus[data-order-id="${orderId}"]`);
+                            statusCell.text('Completed');
+
+                            // Update buttons
+                            var receiveBtn = $(`.receiveOrderBtn[data-order-id="${orderId}"]`);
+                            var completedBtn = $('<button type="button" class="btn btn-info btn-sm me-1 contactDistributorBtn" data-order-id="'+orderId+'">Contact Distributor</button>');
+                            receiveBtn.replaceWith(completedBtn); // Replace cancel button with ship button
                         } else {
                             console.log(`Failed to update order ${orderId} status to Accepted`);
                         }
@@ -279,28 +282,27 @@
                 }
             }
 
-            $(document).on('click', '.contactAdminBtn', function () {
-                var adminId = $(this).data('admin-id');
+            // Contact distributor Button Handler
+            $(document).on('click', '.contactDistributorBtn', function () {
+                var distributorId = $(this).data('distributor-id');
                 // get distributor email from database and open email interface
-                var email = "warehouse_management@gmail.com";
-                window.location.href = 'mailto:' + email;
-
-            });
-
-            // Ship Order Button Handler
-            $(document).on('click', '.shipOrderBtn', function () {
-                var orderId = $(this).data('order-id');
-                var confirmation = confirm("Are you sure you want to ship this order?");
-                if (confirmation) {
-                    updateOrderStatus(orderId, 'Shipped', function (success) {
-                        if (success) {
-                            console.log(`Order ${orderId} status updated to Shipped`);
-                            location.reload();
+                $.ajax({
+                    url: '/Admin/GetUserEmail', // Your endpoint to get the distributor email
+                    type: 'GET',
+                    data: { userId: distributorId },
+                    success: function (response) {
+                        if (response.success && response.email) {
+                            var email = response.email;
+                            window.location.href = 'mailto:' + email;
                         } else {
-                            console.log(`Failed to update order ${orderId} status to Shipped`);
+                            alert('Distributor email not found.');
                         }
-                    });
-                }
+                    },
+                    error: function () {
+                        alert('Error retrieving distributor email.');
+                    }
+                });
+
             });
 
             /*$('.cancelOrderBtn').on('click', function () {
@@ -332,7 +334,7 @@
 
             function submitRefundRequest(refundAmount, orderId) {
                 $.ajax({
-                    url: '/Distributor/SubmitRefundRequest',
+                    url: '/Admin/SubmitRefundRequest',
                     type: 'POST',
                     data: { refundAmount: refundAmount, orderId: orderId },
                     success: function (response) {
@@ -356,7 +358,7 @@
 
             function updateOrderStatus(orderId, status, callback) {
                 $.ajax({
-                    url: '/Distributor/UpdateOrderStatus',
+                    url: '/Admin/UpdateOrderStatus',
                     type: 'POST',
                     data: { orderId: orderId, status: status },
                     success: function (response) {

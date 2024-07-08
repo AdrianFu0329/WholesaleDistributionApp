@@ -216,6 +216,7 @@
                 data: { stockIdentifier: stockIdentifier },
                 success: function (response) {
                     if (response.success) {
+                        console.log(response)
                         // Populate the modal with stock details
                         $('#stockItemName').text(response.stock.itemName);
                         $('#stockDescription').text(response.stock.description);

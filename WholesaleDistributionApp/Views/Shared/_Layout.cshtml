@@ -112,6 +112,26 @@
                                 </li>
                             </ul>
                         </li>
+                        <li class="pc-item pc-hasmenu">
+                            <a href="#!" class="pc-link">
+                                <span class="pc-micon"><i class="ti ti-truck"></i></span>
+                                <span class="pc-mtext">Order</span>
+                                <span class="pc-arrow"><i data-feather="chevron-right"></i></span>
+                            </a>
+                            <ul class="pc-submenu">
+                                <li class="pc-item">
+                                    <a class="pc-link" asp-controller="Admin" asp-action="DistributorOrderManagement">
+                                        <span class="pc-mtext">Manage Distributor Order</span>
+                                    </a>
+                                </li>
+                                <li class="pc-item">
+                                <a class="pc-link" asp-controller="Admin" asp-action="RetailerOrderManagement">
+                                    <span class="pc-mtext">Manage Retailer Order</span>
+                                </a>
+                                </li>
+                            </ul>
+                        </li>
+                        
                         <li class="pc-item">
                             <a class="pc-link" asp-controller="Admin" asp-action="RefundManagement">
                                 <span class="pc-micon"><i class="ri-money-dollar-circle-line"></i></span>
@@ -141,6 +161,12 @@
                             <a class="pc-link" asp-controller="Retailer" asp-action="ViewProducts">
                                 <span class="pc-micon"><i class="ri-shopping-cart-2-line"></i></span>
                                 <span class="pc-mtext">Stock Catalog</span>
+                            </a>
+                        </li>
+                        <li class="pc-item">
+                            <a class="pc-link" asp-controller="Retailer" asp-action="OrderManagement">
+                                <span class="pc-micon"><i class="ri-shopping-cart-2-line"></i></span>
+                                <span class="pc-mtext">My Orders</span>
                             </a>
                         </li>
                     }
