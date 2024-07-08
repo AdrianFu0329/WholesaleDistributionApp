@@ -773,6 +773,7 @@ namespace WholesaleDistributionApp.Controllers
 
             return Json(new { success = true, message = "Stock deleted successfully" });
         }
+
         [HttpPost]
         public async Task<IActionResult> SubmitOrder([FromForm] string orderDetails, [FromForm] IFormFile proofOfPayment, [FromForm] string stockDistributorId)
         {
@@ -888,6 +889,39 @@ namespace WholesaleDistributionApp.Controllers
                 return Json(new { success = false, message = "Order not found." });
             }
 
+            var orderDetails = await _context.OrderDetails
+                .Where(od => od.OrderId == order.OrderId)
+                .ToListAsync();
+            if (orderDetails == null || !orderDetails.Any())
+            {
+                return Json(new { success = false, message = "Order Details not found." });
+            }
+
+            object stock = null;
+            bool isStockFound = true;
+
+            if (order.OrderType == "Warehouse")
+            {
+                stock = await _context.DistributorStock.FindAsync(orderDetails.FirstOrDefault()?.StockId);
+                if (stock == null)
+                {
+                    isStockFound = false;
+                }
+            }
+            else if (order.OrderType == "Retailer")
+            {
+                stock = await _context.WarehouseStock.FindAsync(orderDetails.FirstOrDefault()?.WarehouseStockId);
+                if (stock == null)
+                {
+                    isStockFound = false;
+                }
+            }
+
+            if (!isStockFound)
+            {
+                return Json(new { success = false, message = $"{order.OrderType} Stock not found." });
+            }
+
             // Update refund status
             refund.RefundStatus = request.Status;
 
@@ -895,6 +929,26 @@ namespace WholesaleDistributionApp.Controllers
             if (request.Status == "Approved")
             {
                 order.OrderStatus = "Cancelled";
+
+                // Update stock quantity
+                if (order.OrderType == "Warehouse")
+                {
+                    var distributorStock = stock as DistributorStock;
+                    if (distributorStock != null)
+                    {
+                        distributorStock.Quantity += orderDetails.Sum(od => od.Quantity);
+                        _context.DistributorStock.Update(distributorStock);
+                    }
+                }
+                else if (order.OrderType == "Retailer")
+                {
+                    var warehouseStock = stock as WarehouseStock;
+                    if (warehouseStock != null)
+                    {
+                        warehouseStock.Quantity += orderDetails.Sum(od => od.Quantity);
+                        _context.WarehouseStock.Update(warehouseStock);
+                    }
+                }
             }
             else if (request.Status == "Denied")
             {

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WholesaleDistributionApp.Data;
 
@@ -11,9 +12,11 @@ using WholesaleDistributionApp.Data;
 namespace WholesaleDistributionApp.Migrations
 {
     [DbContext(typeof(WholesaleDistributionAppContext))]
-    partial class WholesaleDistributionAppContextModelSnapshot : ModelSnapshot
+    [Migration("20240708083017_RemoveOrderDetailsTable")]
+    partial class RemoveOrderDetailsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -297,39 +300,6 @@ namespace WholesaleDistributionApp.Migrations
                     b.ToTable("Orders");
                 });
 
-            modelBuilder.Entity("WholesaleDistributionApp.Models.OrderDetails", b =>
-                {
-                    b.Property<Guid>("OrderDetailsId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("OrderId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<double>("PricePerItem")
-                        .HasColumnType("float");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<string>("StockId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<double>("Subtotal")
-                        .HasColumnType("float");
-
-                    b.Property<string>("WarehouseStockId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("OrderDetailsId");
-
-                    b.HasIndex("StockId");
-
-                    b.HasIndex("WarehouseStockId");
-
-                    b.ToTable("OrderDetails");
-                });
-
             modelBuilder.Entity("WholesaleDistributionApp.Models.RefundRequest", b =>
                 {
                     b.Property<string>("RefundId")
@@ -491,21 +461,6 @@ namespace WholesaleDistributionApp.Migrations
                         .IsRequired();
 
                     b.Navigation("Distributor");
-                });
-
-            modelBuilder.Entity("WholesaleDistributionApp.Models.OrderDetails", b =>
-                {
-                    b.HasOne("WholesaleDistributionApp.Models.DistributorStock", "DistributorStock")
-                        .WithMany()
-                        .HasForeignKey("StockId");
-
-                    b.HasOne("WholesaleDistributionApp.Models.WarehouseStock", "WarehouseStock")
-                        .WithMany()
-                        .HasForeignKey("WarehouseStockId");
-
-                    b.Navigation("DistributorStock");
-
-                    b.Navigation("WarehouseStock");
                 });
 
             modelBuilder.Entity("WholesaleDistributionApp.Models.WarehouseStock", b =>
