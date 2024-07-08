@@ -53,13 +53,12 @@ namespace WholesaleDistributionApp.Controllers
         public async Task<IActionResult> StockManagement(string searchString)
         {
             // Load Warehouse Stocks
-            var stocks = _context.WarehouseStock.AsQueryable();
+            var stocks = from s in _context.WarehouseStock.Include(s => s.Distributor)
+                         select s;
 
             if (!string.IsNullOrEmpty(searchString))
             {
-                stocks = stocks.Where(s => s.ItemName.Contains(searchString) ||
-                                           s.Description.Contains(searchString) ||
-                                           s.StockDistributorId.Contains(searchString));
+                stocks = stocks.Where(s => s.ItemName.Contains(searchString));
             }
 
             return View(stocks.ToList());
@@ -587,7 +586,7 @@ namespace WholesaleDistributionApp.Controllers
             return Json(new { success = false, message = "Validation failed", errors });
         }*/
 
-        public async Task<IActionResult> GetStockDetails(string stockIdentifier)
+        public async Task<IActionResult> GetStockDetailsForEdit(string stockIdentifier)
         {
             _logger.LogInformation($"GetStockDetails called with stockIdentifier: {stockIdentifier}");
 
@@ -612,6 +611,45 @@ namespace WholesaleDistributionApp.Controllers
 
             _logger.LogInformation($"Stock details retrieved successfully for stockIdentifier: {stockIdentifier}");
             return Json(new { success = true, stock });
+        }
+
+        public async Task<IActionResult> GetStockDetailsForView(string stockIdentifier)
+        {
+            _logger.LogInformation($"GetStockDetails called with stockIdentifier: {stockIdentifier}");
+
+            if (string.IsNullOrEmpty(stockIdentifier))
+            {
+                _logger.LogWarning("Stock identifier is required but was not provided.");
+                return Json(new { success = false, message = "Stock identifier is required." });
+            }
+
+            stockIdentifier = stockIdentifier.ToLower(); // Convert to lower case for case-insensitive comparison
+
+            var stock = await _context.WarehouseStock
+                .Include(s => s.Distributor) // Ensure Distributor is included in the query
+                .FirstOrDefaultAsync(s =>
+                    s.StockId.ToLower() == stockIdentifier ||
+                    s.ItemName.ToLower() == stockIdentifier ||
+                    s.StockDistributorId.ToLower() == stockIdentifier);
+
+            if (stock == null)
+            {
+                _logger.LogWarning($"Stock not found for stockIdentifier: {stockIdentifier}");
+                return Json(new { success = false, message = "Stock not found." });
+            }
+
+            _logger.LogInformation($"Stock details retrieved successfully for stockIdentifier: {stockIdentifier}");
+
+            var stockDetails = new
+            {
+                itemName = stock.ItemName,
+                description = stock.Description,
+                singlePrice = stock.SinglePrice,
+                distributor = stock.Distributor != null ? new { userName = stock.Distributor.UserName } : null,
+                imgDownloadURL = stock.ImgDownloadURL
+            };
+
+            return Json(new { success = true, stock = stockDetails });
         }
 
         public async Task<IActionResult> GetDistributorStockDetails(string stockIdentifier)

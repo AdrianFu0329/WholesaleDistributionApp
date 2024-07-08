@@ -194,12 +194,28 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <img id="stockImage" class="image-preview-container" src="" alt="Stock Image" style="max-width: 100%;" />
-                <p><strong>Item Name:</strong> <span id="stockItemName"></span></p>
-                <p><strong>Description:</strong> <span id="stockDescription"></span></p>
-                <p><strong>Quantity:</strong> <span id="stockQuantity"></span></p>
-                <p><strong>Price:</strong> <span id="stockPrice"></span></p>
-                <p><strong>Distributor ID:</strong> <span id="stockDistributorId"></span></p>
+                <div class="form-group">
+                    <label for="viewStockImage" class="control-label">Stock Image</label>
+                    <div id="viewStockImageContainer" class="image-preview-container">
+                        <img id="viewStockImage" src="" alt="Stock Image" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="viewItemName" class="control-label">Item Name</label>
+                    <p id="viewItemName"></p>
+                </div>
+                <div class="form-group">
+                    <label for="viewDescription" class="control-label">Description</label>
+                    <p id="viewDescription"></p>
+                </div>
+                <div class="form-group">
+                    <label for="viewSinglePrice" class="control-label">Price per Item</label>
+                    <p id="viewSinglePrice"></p>
+                </div>
+                <div class="form-group">
+                    <label for="viewDistributor" class="control-label">Distributor</label>
+                    <p id="viewDistributor"></p>
+                </div>
             </div>
         </div>
     </div>
@@ -209,30 +225,26 @@
 @*     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> *@
     <script>
-        function openStockDetailsModal(stockIdentifier) {
+       function fetchStockViewDetails(stockId) {
             $.ajax({
-                url: '/Admin/GetStockDetails',
+                url: '@Url.Action("GetStockDetailsForView", "Admin")', // Ensure this URL is correct
                 type: 'GET',
-                data: { stockIdentifier: stockIdentifier },
-                success: function (response) {
+                data: { stockIdentifier: stockId }, // Pass the stockIdentifier as data
+                success: function(response) {
                     if (response.success) {
-                        console.log(response)
-                        // Populate the modal with stock details
-                        $('#stockItemName').text(response.stock.itemName);
-                        $('#stockDescription').text(response.stock.description);
-                        $('#stockQuantity').text(response.stock.quantity);
-                        $('#stockPrice').text(response.stock.singlePrice);
-                        $('#stockDistributorId').text(response.stock.stockDistributorId);
-                        $('#stockImage').attr('src', response.stock.imgDownloadURL);
-
-                        // Show the modal
+                        var stock = response.stock;
+                        $('#viewItemName').text(stock.itemName);
+                        $('#viewDescription').text(stock.description);
+                        $('#viewSinglePrice').text(stock.singlePrice);
+                        $('#viewDistributor').text(stock.distributor.userName);
+                        $('#viewStockImage').attr('src', stock.imgDownloadURL);
                         $('#stockDetailsModal').modal('show');
                     } else {
-                        alert(response.message);
+                        alert('Error: ' + response.message);
                     }
                 },
-                error: function () {
-                    alert('An error occurred while fetching stock details.');
+                error: function() {
+                    alert('Error fetching stock details');
                 }
             });
         }
@@ -343,7 +355,7 @@
 
         function populateEditModal(stockId) {
             $.ajax({
-                url: '@Url.Action("GetStockDetails", "Distributor")',
+                url: '@Url.Action("GetStockDetailsForEdit", "Admin")',
                 type: 'GET',
                 data: { stockIdentifier: stockId },
                 success: function (data) {
@@ -388,9 +400,9 @@
             });
 
             // View Details Button Handler
-            $('.viewDetailsBtn').on('click', function () {
+            $('.viewDetailsBtn').on('click', function() {
                 var stockId = $(this).data('stock-id');
-                openStockDetailsModal(stockId);
+                fetchStockViewDetails(stockId);
             });
 
             // Delete Button Handler
