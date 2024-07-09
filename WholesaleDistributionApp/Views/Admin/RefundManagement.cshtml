@@ -85,15 +85,19 @@
                                             <td>@refund.RefundAmount</td>
                                             <td id="status-@refund.RefundId">@refund.RefundStatus</td>
                                             <td>
-                                                <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-primary btn-sm me-1 approveRequestBtn" data-refund-id="@refund.RefundId">
-                                                        Approve
-                                                    </button>
+                                                @if (refund.RefundStatus != "Approved" && refund.RefundStatus != "Denied") 
+                                                {
+                                                    <div class="btn-group" role="group">
+                                                        <button type="button" class="btn btn-primary btn-sm me-1 approveRequestBtn" data-refund-id="@refund.RefundId">
+                                                            Approve
+                                                        </button>
 
-                                                    <button type="button" class="btn btn-danger btn-sm denyRequestBtn" data-refund-id="@refund.RefundId">
-                                                        Deny
-                                                    </button>
-                                                </div>
+                                                        <button type="button" class="btn btn-danger btn-sm denyRequestBtn" data-refund-id="@refund.RefundId">
+                                                            Deny
+                                                        </button>
+                                                    </div>
+                                                }
+                                                
                                             </td>
                                         </tr>
                                         index++;

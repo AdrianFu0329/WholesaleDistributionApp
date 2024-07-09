@@ -119,7 +119,8 @@ namespace WholesaleDistributionApp.Controllers
                     TotalAmount = orderDetailsList.Sum(od => od.Subtotal),
                     OrderStatus = "Pending",
                     OrderType = "Retailer",
-                    PaymentReceiptURL = imgDownloadURL
+                    PaymentReceiptURL = imgDownloadURL,
+                    StockDistributorId = "-"
                 };
 
                 // Save order to database
