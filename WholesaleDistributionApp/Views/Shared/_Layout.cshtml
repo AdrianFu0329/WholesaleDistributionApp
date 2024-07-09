@@ -154,6 +154,13 @@
                                 <span class="pc-mtext">Manage Order</span>
                             </a>
                         </li>
+
+                        <li class="pc-item">
+                            <a class="pc-link" asp-controller="Distributor" asp-action="RefundManagement">
+                                <span class="pc-micon"><i class="ri-money-dollar-circle-line"></i></span>
+                                <span class="pc-mtext">Refunds</span>
+                            </a>
+                        </li>
                     }
                     @if (User.IsInRole("Retailer"))
                     {
