@@ -84,7 +84,10 @@ namespace WholesaleDistributionApp.Controllers
         public async Task<IActionResult> RefundManagement(string searchString)
         {
             // Load Warehouse Stocks
-            var refunds = _context.RefundRequest.AsQueryable();
+            var refunds = _context.RefundRequest.Where(s =>
+                                 s.RefundType == "Warehouse")
+                                 .AsQueryable();
+
 
             if (!string.IsNullOrEmpty(searchString))
             {
@@ -1158,10 +1161,11 @@ namespace WholesaleDistributionApp.Controllers
         }
 
         [HttpPost]
-        public IActionResult SubmitRefundRequest(double refundAmount, string orderId)
+        public IActionResult SubmitRefundRequest(double refundAmount, string orderId, string type)
         {
             try
             {
+                Console.WriteLine($"refundAmount: {refundAmount}, orderId: {orderId}, type: {type}");
                 // Generate new GUID for RefundId
                 var refundId = Guid.NewGuid();
 
@@ -1172,6 +1176,7 @@ namespace WholesaleDistributionApp.Controllers
                     RequestDate = DateTime.UtcNow,
                     RefundAmount = refundAmount,
                     RefundStatus = "Pending",
+                    RefundType = type,
                     OrderId = orderId
                 };
 

@@ -87,7 +87,7 @@
                                                         <button type="button" class="btn btn-success btn-sm me-1 acceptOrderBtn" data-order-id="@order.OrderId">
                                                             Accept
                                                         </button>
-                                                        <button type="button" class="btn btn-danger btn-sm cancelOrderBtn" data-order-id="@order.OrderId">
+                                                        <button type="button" class="btn btn-danger btn-sm cancelOrderBtn" data-order-id="@order.OrderId" data-refund-amount="@order.TotalAmount">
                                                             Cancel
                                                         </button>
                                                     }
@@ -348,7 +348,7 @@
                 $.ajax({
                     url: '/Admin/SubmitRefundRequest',
                     type: 'POST',
-                    data: { refundAmount: refundAmount, orderId: orderId },
+                    data: { refundAmount: refundAmount, orderId: orderId, type: "Warehouse" },
                     success: function (response) {
                         if (response.success) {
                             updateOrderStatus(orderId, 'Refund Pending', function (success) {
