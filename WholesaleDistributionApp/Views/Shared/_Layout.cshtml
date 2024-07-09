@@ -354,10 +354,10 @@
                                                         <i class="ti ti-settings"></i>
                                                         <span>Account Settings</span>
                                                     </a>
-                                        <a class="dropdown-item" asp-controller="Home" asp-action="Profile">
+@*                                         <a class="dropdown-item" asp-controller="Home" asp-action="Profile">
                                                         <i class="ti ti-user"></i>
                                                         <span>Social Profile</span>
-                                                    </a>
+                                                    </a> *@
                                                     <form id="logoutForm" class="form-inline" method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
                                                         <button href="#" id="logout" type="submit" class="dropdown-item">
                                                             <i class="ti ti-logout"></i>
