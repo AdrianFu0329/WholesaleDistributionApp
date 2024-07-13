@@ -21,6 +21,10 @@ namespace WholesaleDistributionApp.Controllers
             _userManager = userManager;
         }
 
+        public IActionResult Index()
+        {
+            return View();
+        }
         public async Task<IActionResult> MyStock(string searchString)
         {
             var user = await _userManager.GetUserAsync(User);

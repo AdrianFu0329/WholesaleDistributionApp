@@ -44,6 +44,10 @@ namespace WholesaleDistributionApp.Controllers
             _fileService = fileService;
         }
 
+        public IActionResult Index()
+        {
+            return View();
+        }        
         public IActionResult AdminManagement()
         {
             return View();

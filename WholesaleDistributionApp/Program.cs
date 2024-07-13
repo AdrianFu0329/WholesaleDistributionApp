@@ -118,7 +118,10 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.MapGet("/", async context =>
+{
+    context.Response.Redirect("/Identity/Account/Login");//default page
+});
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
