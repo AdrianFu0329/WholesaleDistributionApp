@@ -328,6 +328,11 @@ namespace WholesaleDistributionApp.Controllers
                 if (existingUser != null)
                 {
                     return Json(new { success = false, message = "Email already exists." });
+                }                
+                var existingUserName = await _userManager.FindByNameAsync(model.UserName);
+                if (existingUserName != null)
+                {
+                    return Json(new { success = false, message = "Username already exists." });
                 }
 
                 var user = new WholesaleDistributionAppUser
@@ -370,13 +375,13 @@ namespace WholesaleDistributionApp.Controllers
                     return Json(new { success = true });
                 }
 
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
+                // If creation failed, collect errors and return them
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                return Json(new { success = false, message = "Failed to create user", errors = errors });
             }
 
-            return Json(new { success = false, message = "Invalid model state.", errors = ModelState.Values.SelectMany(v => v.Errors).ToList() });
+            var modelErrors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            return Json(new { success = false, message = modelErrors, errors = modelErrors });
         }
 
         private IUserEmailStore<WholesaleDistributionAppUser> GetEmailStore()
@@ -533,7 +538,8 @@ namespace WholesaleDistributionApp.Controllers
                 }
             }
 
-            return Json(new { success = false, message = "Invalid model state.", errors = ModelState.Values.SelectMany(v => v.Errors).ToList() });
+            var modelErrors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            return Json(new { success = false, message = modelErrors, errors = modelErrors });
         }
 
 
