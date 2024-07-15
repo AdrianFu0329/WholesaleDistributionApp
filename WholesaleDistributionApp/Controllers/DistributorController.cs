@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 using System.Security.Claims;
 using WholesaleDistributionApp.Areas.Identity.Data;
 using WholesaleDistributionApp.Data;
@@ -21,9 +22,74 @@ namespace WholesaleDistributionApp.Controllers
             _userManager = userManager;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                var userId = user!.Id;
+                // Calculate total overall sales asynchronously
+                var totalOverallSales = await _context.Orders
+                    .Where(o => o.OrderType == "Warehouse" && o.OrderStatus == "Completed" && o.StockDistributorId == userId)
+                    .SumAsync(o => o.TotalAmount);
+
+                // Calculate monthly sales for chart asynchronously
+                var monthlySales = await _context.Orders
+                    .Where(o => o.OrderType == "Warehouse" && o.OrderStatus == "Completed" && o.StockDistributorId == userId)
+                    .GroupBy(o => new { Year = o.OrderDate.Year, Month = o.OrderDate.Month })
+                    .Select(g => new
+                    {
+                        Year = g.Key.Year,
+                        Month = g.Key.Month,
+                        TotalSales = g.Sum(o => o.TotalAmount),
+                        DateLabel = new DateTime(g.Key.Year, g.Key.Month, 1).ToString("MMM yyyy")
+                    })
+                    .OrderBy(g => g.Year)
+                    .ThenBy(g => g.Month)
+                    .ToListAsync();
+
+                // Prepare data for chart
+                var chartData = new
+                {
+                    xaxis = monthlySales.Select(g => g.DateLabel),
+                    series = new List<object> { new { name = "Total Sales", data = monthlySales.Select(g => g.TotalSales) } }
+                };
+
+                // Dashboard Cards
+                var toAcceptCount = await _context.Orders.CountAsync(o => o.OrderType == "Warehouse" && o.OrderStatus == "Pending" && o.StockDistributorId == userId);
+                var toShipCount = await _context.Orders.CountAsync(o => o.OrderType == "Warehouse" && o.OrderStatus == "Accepted" && o.StockDistributorId == userId);
+                var pendingRefundCount = await _context.Orders.CountAsync(o => o.OrderStatus == "Pending Refund");
+                var completedOrdersCount = await _context.Orders.CountAsync(o => o.OrderStatus == "Completed");
+                var lowStockItems = await _context.WarehouseStock
+                .Where(ws => ws.Quantity < 50)
+                .Select(ws => new { ws.ItemName, ws.Quantity })
+                .ToListAsync();
+                var shippedItems = await _context.Orders
+                .Where(o => o.OrderType == "Warehouse" && o.OrderStatus == "Shipped" && o.StockDistributorId == userId)
+                .Select(o => new
+                {
+                    o.OrderId,
+                    o.OrderDate
+                })
+                .ToListAsync();
+
+                ViewBag.TotalOverallSales = totalOverallSales;
+                ViewBag.ChartData = chartData;
+                ViewBag.ToAcceptCount = toAcceptCount;
+                ViewBag.ToShipCount = toShipCount;
+                ViewBag.PendingRefundCount = pendingRefundCount;
+                ViewBag.CompletedOrdersCount = completedOrdersCount;
+                ViewBag.LowStockItems = lowStockItems;
+                ViewBag.StockShippedItems = shippedItems;
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                // Handle the exception (log it, etc.)
+                // You can log the error using your logging mechanism here
+                return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            }
         }
         public async Task<IActionResult> MyStock(string searchString)
         {
