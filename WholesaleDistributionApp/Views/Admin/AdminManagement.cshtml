@@ -162,10 +162,10 @@
                 },
                 "columns": [
                     { "data": "no", "className": "text-center" },
-                    { "data": "userName" },
-                    { "data": "email" },
-                    { "data": "phoneNumber" },
-                    { "data": "address" },
+                    { "data": "userName", "name":"userName" },
+                    { "data": "email", "name": "email" },
+                    { "data": "phoneNumber", "name": "phoneNumber" },
+                    { "data": "address", "name": "address" },
                     {
                         "data": null,
                         "className": "text-center",
@@ -243,7 +243,7 @@
                             alert("Admin's Information Edited Successfully.");
                             table.ajax.reload();
                         } else {
-                            alert('Failed to edit user');
+                            alert(response.message || 'Failed to edit user');
                         }
                     },
                     error: function (xhr, status, error) {

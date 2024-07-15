@@ -22,10 +22,12 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
     {
         private readonly SignInManager<WholesaleDistributionAppUser> _signInManager;
         private readonly ILogger<LoginModel> _logger;
+        private readonly UserManager<WholesaleDistributionAppUser> _userManager;
 
-        public LoginModel(SignInManager<WholesaleDistributionAppUser> signInManager, ILogger<LoginModel> logger)
+        public LoginModel(SignInManager<WholesaleDistributionAppUser> signInManager, UserManager<WholesaleDistributionAppUser> userManager, ILogger<LoginModel> logger)
         {
             _signInManager = signInManager;
+            _userManager = userManager;
             _logger = logger;
         }
 
@@ -115,7 +117,33 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
-                    return LocalRedirect(returnUrl);
+                    var user = await _userManager.FindByNameAsync(Input.Email);
+                    if (user == null)
+                    {
+                        _logger.LogWarning($"No user found with email {Input.Email}");
+                        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                        return Page();
+                    }
+                    var roles = await _userManager.GetRolesAsync(user);
+
+                    // Redirect based on role
+                    if (roles.Contains("Admin"))
+                    {
+                        return LocalRedirect(Url.Content("~/Admin/Index"));
+                    }
+                    else if (roles.Contains("Distributor"))
+                    {
+                        return LocalRedirect(Url.Content("~/Distributor/Index"));
+                    }
+                    else if (roles.Contains("Retailer"))
+                    {
+                        return LocalRedirect(Url.Content("~/Retailer/ViewProducts"));
+                    }
+                    else
+                    {
+                        // Default redirect
+                        return LocalRedirect(returnUrl);
+                    }
                 }
                 if (result.RequiresTwoFactor)
                 {
