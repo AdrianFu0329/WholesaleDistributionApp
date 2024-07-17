@@ -1172,12 +1172,12 @@ namespace WholesaleDistributionApp.Controllers
                                     var newStock = new WarehouseStock
                                     {
                                         StockId = Guid.NewGuid().ToString(),
-                                        DistributorStockId = newStockDetails.StockDistributorId, // Need to set here when purchase complete
+                                        DistributorStockId = newStockDetails.StockId, // Need to set here when purchase complete
                                         ItemName = newStockDetails.ItemName,
                                         Description = newStockDetails.Description,
                                         Quantity = item.Quantity,
                                         SinglePrice = newStockDetails.SinglePrice,
-                                        StockDistributorId = newStockDetails.StockId,
+                                        StockDistributorId = newStockDetails.StockDistributorId,
                                         ImgDownloadURL = newStockDetails.ImgDownloadURL,
                                         ForRetailerPurchase = false,
                                     };
