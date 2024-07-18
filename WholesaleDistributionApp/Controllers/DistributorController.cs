@@ -148,7 +148,7 @@ namespace WholesaleDistributionApp.Controllers
         {
             // Load Distributor Refund Requests
             var refunds = _context.RefundRequest.Where(s =>
-                                 s.RefundType == "Distributor")
+                                 s.RefundType == "Warehouse")
                                  .AsQueryable();
 
             if (!string.IsNullOrEmpty(searchString))
@@ -610,14 +610,9 @@ namespace WholesaleDistributionApp.Controllers
                 return Json(new { success = false, message = "Order not found." });
             }
 
-            var userInfo = await _context.UserInfo
-                .Where(ui => ui.UserId == stock.StockDistributorId)
-                .FirstOrDefaultAsync();
-
-            if (userInfo == null)
-            {
-                return Json(new { success = false, message = "User information not found." });
-            }
+            string bankName = "Dummy Bank";
+            string bankAccNum = "17834983746";
+            string qrImage = "../assets/images/warehouse/QR-code.jpg";
 
             var response = new
             {
@@ -635,9 +630,9 @@ namespace WholesaleDistributionApp.Controllers
                 },
                 refundRequest = new
                 {
-                    refundBank = userInfo.BankName,
-                    bankAccNum = userInfo.BankAccNo,
-                    qrImage = userInfo.QRImgURL
+                    refundBank = bankName,
+                    bankAccNum = bankAccNum,
+                    qrImage = qrImage
                 }
             };
 

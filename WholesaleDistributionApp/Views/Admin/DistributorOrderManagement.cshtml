@@ -336,7 +336,7 @@
                 $.ajax({
                     url: '/Admin/SubmitRefundRequest',
                     type: 'POST',
-                    data: { refundAmount: refundAmount, orderId: orderId, type: "Distributor" },
+                    data: { refundAmount: refundAmount, orderId: orderId, type: "Warehouse" },
                     success: function (response) {
                         if (response.success) {
                             updateOrderStatus(orderId, 'Refund Pending', function (success) {
