@@ -151,7 +151,7 @@ namespace WholesaleDistributionApp.Controllers
         {
             // Load Warehouse Stocks
             var refunds = _context.RefundRequest.Where(s =>
-                                 s.RefundType == "Warehouse")
+                                 s.RefundType == "Retailer")
                                  .AsQueryable();
 
 
