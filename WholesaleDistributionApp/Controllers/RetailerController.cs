@@ -295,7 +295,7 @@ namespace WholesaleDistributionApp.Controllers
                     RequestDate = DateTime.UtcNow,
                     RefundAmount = refundAmount,
                     RefundStatus = "Pending",
-                    RefundType = "Warehouse",
+                    RefundType = "Retailer",
                     OrderId = orderId
                 };
 

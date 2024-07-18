@@ -1298,8 +1298,8 @@ namespace WholesaleDistributionApp.Controllers
                 return Json(new { success = false, message = "Order details not found." });
             }
 
-            var stock = await _context.DistributorStock
-                .Where(ds => ds.StockId == orderDetails.StockId)
+            var stock = await _context.WarehouseStock
+                .Where(ws => ws.StockId == orderDetails.WarehouseStockId)
                 .FirstOrDefaultAsync();
 
             if (stock == null)
@@ -1316,8 +1316,9 @@ namespace WholesaleDistributionApp.Controllers
                 return Json(new { success = false, message = "Order not found." });
             }
 
+
             var userInfo = await _context.UserInfo
-                .Where(ui => ui.UserId == stock.StockDistributorId)
+                .Where(ui => ui.UserId == order.RetailerId)
                 .FirstOrDefaultAsync();
 
             if (userInfo == null)

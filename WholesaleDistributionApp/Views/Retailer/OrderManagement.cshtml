@@ -38,7 +38,8 @@
                                 <option value="Accepted">Accepted</option>
                                 <option value="Shipped">Shipped</option>
                                 <option value="Cancelled">Cancelled</option>
-                                <option value="Refund Pending">Refund Pending</option>
+                                <option value="Refund Pending Accepted">Refund Pending (accepted)</option>
+                                <option value="Refund Pending Pending">Refund Pending (pending)</option>
                                 <option value="Completed">Completed</option>
                             </select>
                         </div>
@@ -316,11 +317,11 @@
 
                 var confirmation = confirm("Are you sure you want to cancel this order and request a refund?");
                 if (confirmation) {
-                    submitRefundRequest(refundAmount, orderId);
+                    submitRefundRequest(refundAmount, orderId, currentStatus);
                 }
             });
 
-            function submitRefundRequest(refundAmount, orderId) {
+            function submitRefundRequest(refundAmount, orderId, currentStatus) {
                 $.ajax({
                     url: '/Retailer/SubmitRefundRequest',
                     type: 'POST',
