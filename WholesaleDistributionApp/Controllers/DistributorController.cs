@@ -6,6 +6,7 @@ using System.Security.Claims;
 using WholesaleDistributionApp.Areas.Identity.Data;
 using WholesaleDistributionApp.Data;
 using WholesaleDistributionApp.Models;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WholesaleDistributionApp.Controllers
 {
@@ -13,9 +14,9 @@ namespace WholesaleDistributionApp.Controllers
     {
         private readonly WholesaleDistributionAppContext _context;
         private readonly UserManager<WholesaleDistributionAppUser> _userManager;
-        private readonly ILogger<AdminController> _logger;
-
-        public DistributorController(WholesaleDistributionAppContext context, ILogger<AdminController> logger, UserManager<WholesaleDistributionAppUser> userManager)
+        private readonly ILogger<DistributorController> _logger;
+        
+        public DistributorController(WholesaleDistributionAppContext context, ILogger<DistributorController> logger, UserManager<WholesaleDistributionAppUser> userManager)
         {
             _context = context;
             _logger = logger;
@@ -442,7 +443,7 @@ namespace WholesaleDistributionApp.Controllers
         }
 
         [HttpPost]
-        public IActionResult SubmitRefundRequest(double refundAmount, string orderId)
+        public IActionResult SubmitRefundRequest(double refundAmount, string orderId, string currentStatus)
         {
             try
             {
@@ -523,38 +524,53 @@ namespace WholesaleDistributionApp.Controllers
 
             // Update refund status
             refund.RefundStatus = request.Status;
-
-            // Update order status based on refund status
-            if (request.Status == "Approved")
+            //_logger.LogWarning($"{order.OrderStatus}");
+            if (order.OrderStatus == "Refund Pending Accepted")
             {
-                order.OrderStatus = "Cancelled";
+                // Update order status based on refund status
+                if (request.Status == "Approved")
+                {
+                    order.OrderStatus = "Cancelled";
 
-                // Update stock quantity
-                if (order.OrderType == "Warehouse")
-                {
-                    var distributorStock = stock as DistributorStock;
-                    if (distributorStock != null)
+                    // Update stock quantity
+                    if (order.OrderType == "Warehouse")
                     {
-                        distributorStock.Quantity += orderDetails.Sum(od => od.Quantity);
-                        _context.DistributorStock.Update(distributorStock);
+                        var distributorStock = stock as DistributorStock;
+                        if (distributorStock != null)
+                        {
+                            distributorStock.Quantity += orderDetails.Sum(od => od.Quantity);
+                            _context.DistributorStock.Update(distributorStock);
+                        }
                     }
+                    else if (order.OrderType == "Retailer")
+                    {
+                        var warehouseStock = stock as WarehouseStock;
+                        if (warehouseStock != null)
+                        {
+                            warehouseStock.Quantity += orderDetails.Sum(od => od.Quantity);
+                            _context.WarehouseStock.Update(warehouseStock);
+                        }
+                    }
+                }else if (request.Status == "Denied"){
+                    order.OrderStatus = "Accepted";
                 }
-                else if (order.OrderType == "Retailer")
+            } else if (order.OrderStatus == "Refund Pending Pending")
+            {
+                _logger.LogWarning($"Not Hehe");
+                // Update order status based on refund status
+                if (request.Status == "Approved")
                 {
-                    var warehouseStock = stock as WarehouseStock;
-                    if (warehouseStock != null)
-                    {
-                        warehouseStock.Quantity += orderDetails.Sum(od => od.Quantity);
-                        _context.WarehouseStock.Update(warehouseStock);
-                    }
+                    order.OrderStatus = "Cancelled";
+                }
+                else if (request.Status == "Denied")
+                {
+                    order.OrderStatus = "Accepted";
                 }
             }
-            else if (request.Status == "Denied")
-            {
-                order.OrderStatus = "Accepted";
-            }
 
-            try
+
+
+                try
             {
                 _context.RefundRequest.Update(refund);
                 _context.Orders.Update(order);

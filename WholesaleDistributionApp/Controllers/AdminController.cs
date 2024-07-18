@@ -999,36 +999,51 @@ namespace WholesaleDistributionApp.Controllers
 
             // Update refund status
             refund.RefundStatus = request.Status;
-
-            // Update order status based on refund status
-            if (request.Status == "Approved")
+            if (order.OrderStatus == "Refund Pending Accepted")
             {
-                order.OrderStatus = "Cancelled";
-
-                // Update stock quantity
-                if (order.OrderType == "Warehouse")
+                // Update order status based on refund status
+                if (request.Status == "Approved")
                 {
-                    var distributorStock = stock as DistributorStock;
-                    if (distributorStock != null)
+                    order.OrderStatus = "Cancelled";
+
+                    // Update stock quantity
+                    if (order.OrderType == "Warehouse")
                     {
-                        distributorStock.Quantity += orderDetails.Sum(od => od.Quantity);
-                        _context.DistributorStock.Update(distributorStock);
+                        var distributorStock = stock as DistributorStock;
+                        if (distributorStock != null)
+                        {
+                            distributorStock.Quantity += orderDetails.Sum(od => od.Quantity);
+                            _context.DistributorStock.Update(distributorStock);
+                        }
+                    }
+                    else if (order.OrderType == "Retailer")
+                    {
+                        var warehouseStock = stock as WarehouseStock;
+                        if (warehouseStock != null)
+                        {
+                            warehouseStock.Quantity += orderDetails.Sum(od => od.Quantity);
+                            _context.WarehouseStock.Update(warehouseStock);
+                        }
                     }
                 }
-                else if (order.OrderType == "Retailer")
+                else if (request.Status == "Denied")
                 {
-                    var warehouseStock = stock as WarehouseStock;
-                    if (warehouseStock != null)
-                    {
-                        warehouseStock.Quantity += orderDetails.Sum(od => od.Quantity);
-                        _context.WarehouseStock.Update(warehouseStock);
-                    }
+                    order.OrderStatus = "Accepted";
+                }
+            } else
+            {
+                // Update order status based on refund status
+                if (request.Status == "Approved")
+                {
+                    order.OrderStatus = "Cancelled";
+
+                }
+                else if (request.Status == "Denied")
+                {
+                    order.OrderStatus = "Accepted";
                 }
             }
-            else if (request.Status == "Denied")
-            {
-                order.OrderStatus = "Accepted";
-            }
+               
 
             try
             {

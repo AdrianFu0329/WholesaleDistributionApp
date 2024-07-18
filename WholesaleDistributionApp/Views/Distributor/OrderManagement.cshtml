@@ -87,16 +87,13 @@
                                                         <button type="button" class="btn btn-success btn-sm me-1 acceptOrderBtn" data-order-id="@order.OrderId">
                                                             Accept
                                                         </button>
-                                                        <button type="button" class="btn btn-danger btn-sm cancelOrderBtn" data-order-id="@order.OrderId">
-                                                            Cancel
-                                                        </button>
                                                     }
                                                     else if (order.OrderStatus == "Accepted")
                                                     {
                                                         <button type="button" class="btn btn-info btn-sm me-1 shipOrderBtn" data-order-id="@order.OrderId">
                                                             Ship
                                                         </button>
-                                                        <button type="button" class="btn btn-danger btn-sm cancelOrderBtn" data-order-id="@order.OrderId" data-refund-amount="@order.TotalAmount">
+                                                        <button type="button" class="btn btn-danger btn-sm cancelOrderBtn" data-order-id="@order.OrderId" data-refund-amount="@order.TotalAmount" data-current-status="@order.OrderStatus">
                                                             Cancel
                                                         </button>
                                                     }
@@ -111,7 +108,8 @@
                                                         <button type="button" class="btn btn-secondary btn-sm" disabled>
                                                             Cancelled
                                                         </button>
-                                                    } else if (order.OrderStatus == "Refund Pending")
+                                                    }
+                                                    else if (order.OrderStatus == "Refund Pending Accepted" || order.OrderStatus == "Refund Pending Pending")
                                                     {
                                                         <button type="button" class="btn btn-secondary btn-sm" disabled>
                                                             Pending Refund
@@ -323,27 +321,39 @@
             $('.cancelOrderBtn').on('click', function () {
                 var orderId = $(this).data('order-id');
                 var refundAmount = parseFloat($(this).data('refund-amount'));
+                var currentStatus = $(this).data('current-status')
 
                 var confirmation = confirm("Are you sure you want to cancel this order and request a refund?");
                 if (confirmation) {
-                    submitRefundRequest(refundAmount, orderId);
+                    submitRefundRequest(refundAmount, orderId, currentStatus);
                 }
             });
 
-            function submitRefundRequest(refundAmount, orderId) {
+            function submitRefundRequest(refundAmount, orderId, currentStatus) {
                 $.ajax({
                     url: '/Distributor/SubmitRefundRequest',
                     type: 'POST',
                     data: { refundAmount: refundAmount, orderId: orderId },
                     success: function (response) {
                         if (response.success) {
-                            updateOrderStatus(orderId, 'Refund Pending', function (success) {
-                                if (success) {
-                                    location.reload();
-                                } else {
-                                    alert('Failed to update order status to Refund Pending.');
-                                }
-                            });
+                            if (currentStatus == "Pending") {
+                                updateOrderStatus(orderId, 'Refund Pending Pending', function (success) {
+                                    if (success) {
+                                        location.reload();
+                                    } else {
+                                        alert('Failed to update order status to Refund Pending.');
+                                    }
+                                });
+                            } else if (currentStatus == "Accepted") {
+                                updateOrderStatus(orderId, 'Refund Pending Accepted', function (success) {
+                                    if (success) {
+                                        location.reload();
+                                    } else {
+                                        alert('Failed to update order status to Refund Pending.');
+                                    }
+                                });
+                            }
+
                         } else {
                             alert('Failed to submit refund request.');
                         }
