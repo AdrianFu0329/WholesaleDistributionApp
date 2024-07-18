@@ -79,7 +79,7 @@ namespace WholesaleDistributionApp.Controllers
                 // Dashboard Cards
                 var toAcceptCount = await _context.Orders.CountAsync(o => o.OrderType == "Retailer" && o.OrderStatus == "Pending");
                 var toShipCount = await _context.Orders.CountAsync(o => o.OrderType == "Retailer" && o.OrderStatus == "Accepted");
-                var pendingRefundCount = await _context.Orders.CountAsync(o => o.OrderStatus == "Pending Refund");
+                var pendingRefundCount = await _context.Orders.CountAsync(o => o.OrderStatus == "Refund Pending Pending" || o.OrderStatus == "Refund Pending Accepted");
                 var completedOrdersCount = await _context.Orders.CountAsync(o => o.OrderStatus == "Completed");
                 var lowStockItems = await _context.WarehouseStock
                 .Where(ws => ws.Quantity < 50)
