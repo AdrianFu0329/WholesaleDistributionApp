@@ -147,10 +147,21 @@ namespace WholesaleDistributionApp.Controllers
 
         public async Task<IActionResult> RefundManagement(string searchString)
         {
-            // Load Distributor Refund Requests
-            var refunds = _context.RefundRequest.Where(s =>
-                                 s.RefundType == "Warehouse")
-                                 .AsQueryable();
+            var user = await _userManager.GetUserAsync(User);
+            var userId = user!.Id;
+
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            // Load Distributor Refund Requests of the current Distributor
+            var refunds = from refund in _context.RefundRequest
+                          join order in _context.Orders
+                          on refund.OrderId equals order.OrderId.ToString()
+                          where refund.RefundType == "Warehouse"
+                          && order.StockDistributorId == userId
+                          select refund;
 
             if (!string.IsNullOrEmpty(searchString))
             {
