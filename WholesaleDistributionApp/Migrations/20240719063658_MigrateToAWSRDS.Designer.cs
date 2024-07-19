@@ -12,8 +12,8 @@ using WholesaleDistributionApp.Data;
 namespace WholesaleDistributionApp.Migrations
 {
     [DbContext(typeof(WholesaleDistributionAppContext))]
-    [Migration("20240707082242_DropRefundRequestTable")]
-    partial class DropRefundRequestTable
+    [Migration("20240719063658_MigrateToAWSRDS")]
+    partial class MigrateToAWSRDS
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -302,11 +302,9 @@ namespace WholesaleDistributionApp.Migrations
 
             modelBuilder.Entity("WholesaleDistributionApp.Models.OrderDetails", b =>
                 {
-                    b.Property<int>("OrderDetailsId")
+                    b.Property<Guid>("OrderDetailsId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderDetailsId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uniqueidentifier");
@@ -333,6 +331,31 @@ namespace WholesaleDistributionApp.Migrations
                     b.HasIndex("WarehouseStockId");
 
                     b.ToTable("OrderDetails");
+                });
+
+            modelBuilder.Entity("WholesaleDistributionApp.Models.RefundRequest", b =>
+                {
+                    b.Property<string>("RefundId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("OrderId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double?>("RefundAmount")
+                        .HasColumnType("float");
+
+                    b.Property<string>("RefundStatus")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RefundType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("RequestDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("RefundId");
+
+                    b.ToTable("RefundRequest");
                 });
 
             modelBuilder.Entity("WholesaleDistributionApp.Models.UserInfo", b =>

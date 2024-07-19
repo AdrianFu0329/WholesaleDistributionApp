@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace WholesaleDistributionApp.Migrations
 {
     /// <inheritdoc />
-    public partial class CreateIdentitySchema : Migration
+    public partial class MigrateToAWSRDS : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -48,6 +48,60 @@ namespace WholesaleDistributionApp.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Orders",
+                columns: table => new
+                {
+                    OrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    StockDistributorId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TotalAmount = table.Column<double>(type: "float", nullable: false),
+                    OrderStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PaymentReceiptURL = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    OrderType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RetailerId = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Orders", x => x.OrderId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RefundRequest",
+                columns: table => new
+                {
+                    RefundId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    RequestDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RefundAmount = table.Column<double>(type: "float", nullable: true),
+                    RefundStatus = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    RefundType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OrderId = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RefundRequest", x => x.RefundId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserInfo",
+                columns: table => new
+                {
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    UserName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Password = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserRole = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BankName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    BankAccNo = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    QRImgURL = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserInfo", x => x.UserId);
                 });
 
             migrationBuilder.CreateTable(
@@ -156,6 +210,82 @@ namespace WholesaleDistributionApp.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "DistributorStock",
+                columns: table => new
+                {
+                    StockId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ItemName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    SinglePrice = table.Column<double>(type: "float", nullable: false),
+                    StockDistributorId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ImgDownloadURL = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DistributorDeliveryStatus = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DistributorStock", x => x.StockId);
+                    table.ForeignKey(
+                        name: "FK_DistributorStock_UserInfo_StockDistributorId",
+                        column: x => x.StockDistributorId,
+                        principalTable: "UserInfo",
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WarehouseStock",
+                columns: table => new
+                {
+                    StockId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    DistributorStockId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ItemName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    SinglePrice = table.Column<double>(type: "float", nullable: false),
+                    StockDistributorId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ImgDownloadURL = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ForRetailerPurchase = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WarehouseStock", x => x.StockId);
+                    table.ForeignKey(
+                        name: "FK_WarehouseStock_UserInfo_StockDistributorId",
+                        column: x => x.StockDistributorId,
+                        principalTable: "UserInfo",
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OrderDetails",
+                columns: table => new
+                {
+                    OrderDetailsId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    StockId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    PricePerItem = table.Column<double>(type: "float", nullable: false),
+                    Subtotal = table.Column<double>(type: "float", nullable: false),
+                    WarehouseStockId = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderDetails", x => x.OrderDetailsId);
+                    table.ForeignKey(
+                        name: "FK_OrderDetails_DistributorStock_StockId",
+                        column: x => x.StockId,
+                        principalTable: "DistributorStock",
+                        principalColumn: "StockId");
+                    table.ForeignKey(
+                        name: "FK_OrderDetails_WarehouseStock_WarehouseStockId",
+                        column: x => x.WarehouseStockId,
+                        principalTable: "WarehouseStock",
+                        principalColumn: "StockId");
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
@@ -194,6 +324,26 @@ namespace WholesaleDistributionApp.Migrations
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DistributorStock_StockDistributorId",
+                table: "DistributorStock",
+                column: "StockDistributorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderDetails_StockId",
+                table: "OrderDetails",
+                column: "StockId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderDetails_WarehouseStockId",
+                table: "OrderDetails",
+                column: "WarehouseStockId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WarehouseStock_StockDistributorId",
+                table: "WarehouseStock",
+                column: "StockDistributorId");
         }
 
         /// <inheritdoc />
@@ -215,10 +365,28 @@ namespace WholesaleDistributionApp.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "OrderDetails");
+
+            migrationBuilder.DropTable(
+                name: "Orders");
+
+            migrationBuilder.DropTable(
+                name: "RefundRequest");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "DistributorStock");
+
+            migrationBuilder.DropTable(
+                name: "WarehouseStock");
+
+            migrationBuilder.DropTable(
+                name: "UserInfo");
         }
     }
 }

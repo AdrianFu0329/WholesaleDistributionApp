@@ -190,7 +190,7 @@
         margin-top: 10px;
     }
 
-/*     .image-preview-container {
+     .image-preview-container {
         width: 250px;
         height: 250px;
         overflow: hidden;
@@ -203,11 +203,11 @@
         margin-right: auto;
     }
 
-        .image-preview-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        } */
+    .image-preview-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
 </style>
 
 <input type="hidden" id="currentUrl" value="@Url.Action("ViewProducts", "Retailer")" />
@@ -641,7 +641,7 @@
                 const modalBody = $('#productDetailsBody');
                 modalBody.html(`
                             <p><strong>Item Name:</strong> ${stockDetails.ItemName}</p>
-                            <p><strong>Image:</strong> <img src="${stockDetails.ImgDownloadURL}" alt="Stock Image" style="max-width: 30%; height: auto;"></p>
+                            <p><strong>Image:</strong> <img src="${stockDetails.ImgDownloadURL}" class="image-preview-container" src="" alt="Stock Image" style="max-width: 100%;"></p>
                             <p><strong>Item Description:</strong> ${stockDetails.Description}</p>
                             <p><strong>Available Quantity:</strong> ${stockDetails.Quantity}</p>
                             <p><strong>Single Price:</strong> RM${stockDetails.SinglePrice}</p>

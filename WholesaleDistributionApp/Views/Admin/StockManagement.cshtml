@@ -367,6 +367,7 @@
                         $('#editSinglePrice').val(data.stock.singlePrice);
                         $('#editDistributorDeliveryStatus').val(data.stock.distributorDeliveryStatus);
                         $('#editStockImagePreview').attr('src', data.stock.imgDownloadURL);
+                        $('#editForRetailerPurchase').val(data.stock.forRetailerPurchase ? "true" : "false");
                         $('#editStockModal').modal('show');
                     } else {
                         alert('Error fetching stock details: ' + data.message);
