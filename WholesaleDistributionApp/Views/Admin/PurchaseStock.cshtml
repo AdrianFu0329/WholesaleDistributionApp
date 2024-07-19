@@ -552,6 +552,7 @@
                 }
 
                 var formDataList = [];
+                var proofOfPaymentMap = new Map(); 
                 for (var stockDistributorId in groupedOrderDetails) {
                     var proofOfPaymentFile = $('#proofOfPayment_' + stockDistributorId)[0].files[0];
                     var stockDistributorName = groupedOrderDetails[stockDistributorId][0].stockDistributorName; // Accessing stockDistributorName from the first element
@@ -572,6 +573,26 @@
                         alert('File size exceeds 5MB limit for Distributor ' + stockDistributorName);
                         return;
                     }
+
+                    var duplicateDistributors = [];
+                    proofOfPaymentMap.forEach((value, key) => {
+                        if (proofOfPaymentFile.name === key && proofOfPaymentFile.size === value.size) {
+                            duplicateDistributors.push(value.stockDistributorName);
+                        }
+                    });
+
+                    if (duplicateDistributors.length > 0) {
+                        duplicateDistributors.push(stockDistributorName); // Include current distributor in the list
+                        alert('You submitted the same proof of payment to ' + duplicateDistributors.join(', ') + '. Please ensure you submit the correct proof of payment file! Try again.');
+                        return;
+                    }
+
+                    // Add the proof of payment file to the map
+                    proofOfPaymentMap.set(proofOfPaymentFile.name, {
+                        size: proofOfPaymentFile.size,
+                        stockDistributorName: stockDistributorName
+                    });
+
                     // console.log(stockDistributorName);
                     // console.log(stockDistributorId);
                     var formData = new FormData();
