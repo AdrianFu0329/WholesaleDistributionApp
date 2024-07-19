@@ -79,7 +79,7 @@ namespace WholesaleDistributionApp.Controllers
                 // Dashboard Cards
                 var toAcceptCount = await _context.Orders.CountAsync(o => o.OrderType == "Retailer" && o.OrderStatus == "Pending");
                 var toShipCount = await _context.Orders.CountAsync(o => o.OrderType == "Retailer" && o.OrderStatus == "Accepted");
-                var pendingRefundCount = await _context.Orders.CountAsync(o => o.OrderStatus == "Pending Refund");
+                var pendingRefundCount = await _context.Orders.CountAsync(o => o.OrderStatus == "Refund Pending Pending" || o.OrderStatus == "Refund Pending Accepted");
                 var completedOrdersCount = await _context.Orders.CountAsync(o => o.OrderStatus == "Completed");
                 var lowStockItems = await _context.WarehouseStock
                 .Where(ws => ws.Quantity < 50)
@@ -151,7 +151,7 @@ namespace WholesaleDistributionApp.Controllers
         {
             // Load Warehouse Stocks
             var refunds = _context.RefundRequest.Where(s =>
-                                 s.RefundType == "Warehouse")
+                                 s.RefundType == "Retailer")
                                  .AsQueryable();
 
 
@@ -999,36 +999,51 @@ namespace WholesaleDistributionApp.Controllers
 
             // Update refund status
             refund.RefundStatus = request.Status;
-
-            // Update order status based on refund status
-            if (request.Status == "Approved")
+            if (order.OrderStatus == "Refund Pending Accepted")
             {
-                order.OrderStatus = "Cancelled";
-
-                // Update stock quantity
-                if (order.OrderType == "Warehouse")
+                // Update order status based on refund status
+                if (request.Status == "Approved")
                 {
-                    var distributorStock = stock as DistributorStock;
-                    if (distributorStock != null)
+                    order.OrderStatus = "Cancelled";
+
+                    // Update stock quantity
+                    if (order.OrderType == "Warehouse")
                     {
-                        distributorStock.Quantity += orderDetails.Sum(od => od.Quantity);
-                        _context.DistributorStock.Update(distributorStock);
+                        var distributorStock = stock as DistributorStock;
+                        if (distributorStock != null)
+                        {
+                            distributorStock.Quantity += orderDetails.Sum(od => od.Quantity);
+                            _context.DistributorStock.Update(distributorStock);
+                        }
+                    }
+                    else if (order.OrderType == "Retailer")
+                    {
+                        var warehouseStock = stock as WarehouseStock;
+                        if (warehouseStock != null)
+                        {
+                            warehouseStock.Quantity += orderDetails.Sum(od => od.Quantity);
+                            _context.WarehouseStock.Update(warehouseStock);
+                        }
                     }
                 }
-                else if (order.OrderType == "Retailer")
+                else if (request.Status == "Denied")
                 {
-                    var warehouseStock = stock as WarehouseStock;
-                    if (warehouseStock != null)
-                    {
-                        warehouseStock.Quantity += orderDetails.Sum(od => od.Quantity);
-                        _context.WarehouseStock.Update(warehouseStock);
-                    }
+                    order.OrderStatus = "Accepted";
+                }
+            } else
+            {
+                // Update order status based on refund status
+                if (request.Status == "Approved")
+                {
+                    order.OrderStatus = "Cancelled";
+
+                }
+                else if (request.Status == "Denied")
+                {
+                    order.OrderStatus = "Accepted";
                 }
             }
-            else if (request.Status == "Denied")
-            {
-                order.OrderStatus = "Accepted";
-            }
+               
 
             try
             {
@@ -1283,8 +1298,8 @@ namespace WholesaleDistributionApp.Controllers
                 return Json(new { success = false, message = "Order details not found." });
             }
 
-            var stock = await _context.DistributorStock
-                .Where(ds => ds.StockId == orderDetails.StockId)
+            var stock = await _context.WarehouseStock
+                .Where(ws => ws.StockId == orderDetails.WarehouseStockId)
                 .FirstOrDefaultAsync();
 
             if (stock == null)
@@ -1301,8 +1316,9 @@ namespace WholesaleDistributionApp.Controllers
                 return Json(new { success = false, message = "Order not found." });
             }
 
+
             var userInfo = await _context.UserInfo
-                .Where(ui => ui.UserId == stock.StockDistributorId)
+                .Where(ui => ui.UserId == order.RetailerId)
                 .FirstOrDefaultAsync();
 
             if (userInfo == null)

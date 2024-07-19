@@ -6,6 +6,7 @@ using System.Security.Claims;
 using WholesaleDistributionApp.Areas.Identity.Data;
 using WholesaleDistributionApp.Data;
 using WholesaleDistributionApp.Models;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WholesaleDistributionApp.Controllers
 {
@@ -13,9 +14,9 @@ namespace WholesaleDistributionApp.Controllers
     {
         private readonly WholesaleDistributionAppContext _context;
         private readonly UserManager<WholesaleDistributionAppUser> _userManager;
-        private readonly ILogger<AdminController> _logger;
-
-        public DistributorController(WholesaleDistributionAppContext context, ILogger<AdminController> logger, UserManager<WholesaleDistributionAppUser> userManager)
+        private readonly ILogger<DistributorController> _logger;
+        
+        public DistributorController(WholesaleDistributionAppContext context, ILogger<DistributorController> logger, UserManager<WholesaleDistributionAppUser> userManager)
         {
             _context = context;
             _logger = logger;
@@ -58,10 +59,10 @@ namespace WholesaleDistributionApp.Controllers
                 // Dashboard Cards
                 var toAcceptCount = await _context.Orders.CountAsync(o => o.OrderType == "Warehouse" && o.OrderStatus == "Pending" && o.StockDistributorId == userId);
                 var toShipCount = await _context.Orders.CountAsync(o => o.OrderType == "Warehouse" && o.OrderStatus == "Accepted" && o.StockDistributorId == userId);
-                var pendingRefundCount = await _context.Orders.CountAsync(o => o.OrderStatus == "Pending Refund");
+                var pendingRefundCount = await _context.Orders.CountAsync(o => (o.OrderStatus == "Refund Pending Accepted" || o.OrderStatus == "Refund Pending Pending") && o.StockDistributorId == userId);
                 var completedOrdersCount = await _context.Orders.CountAsync(o => o.OrderStatus == "Completed");
-                var lowStockItems = await _context.WarehouseStock
-                .Where(ws => ws.Quantity < 50)
+                var lowStockItems = await _context.DistributorStock
+                .Where(ws => ws.Quantity < 50 && ws.StockDistributorId == userId)
                 .Select(ws => new { ws.ItemName, ws.Quantity })
                 .ToListAsync();
                 var shippedItems = await _context.Orders
@@ -146,10 +147,21 @@ namespace WholesaleDistributionApp.Controllers
 
         public async Task<IActionResult> RefundManagement(string searchString)
         {
-            // Load Distributor Refund Requests
-            var refunds = _context.RefundRequest.Where(s =>
-                                 s.RefundType == "Distributor")
-                                 .AsQueryable();
+            var user = await _userManager.GetUserAsync(User);
+            var userId = user!.Id;
+
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            // Load Distributor Refund Requests of the current Distributor
+            var refunds = from refund in _context.RefundRequest
+                          join order in _context.Orders
+                          on refund.OrderId equals order.OrderId.ToString()
+                          where refund.RefundType == "Warehouse"
+                          && order.StockDistributorId == userId
+                          select refund;
 
             if (!string.IsNullOrEmpty(searchString))
             {
@@ -442,7 +454,7 @@ namespace WholesaleDistributionApp.Controllers
         }
 
         [HttpPost]
-        public IActionResult SubmitRefundRequest(double refundAmount, string orderId)
+        public IActionResult SubmitRefundRequest(double refundAmount, string orderId, string currentStatus)
         {
             try
             {
@@ -523,38 +535,53 @@ namespace WholesaleDistributionApp.Controllers
 
             // Update refund status
             refund.RefundStatus = request.Status;
-
-            // Update order status based on refund status
-            if (request.Status == "Approved")
+            //_logger.LogWarning($"{order.OrderStatus}");
+            if (order.OrderStatus == "Refund Pending Accepted")
             {
-                order.OrderStatus = "Cancelled";
+                // Update order status based on refund status
+                if (request.Status == "Approved")
+                {
+                    order.OrderStatus = "Cancelled";
 
-                // Update stock quantity
-                if (order.OrderType == "Warehouse")
-                {
-                    var distributorStock = stock as DistributorStock;
-                    if (distributorStock != null)
+                    // Update stock quantity
+                    if (order.OrderType == "Warehouse")
                     {
-                        distributorStock.Quantity += orderDetails.Sum(od => od.Quantity);
-                        _context.DistributorStock.Update(distributorStock);
+                        var distributorStock = stock as DistributorStock;
+                        if (distributorStock != null)
+                        {
+                            distributorStock.Quantity += orderDetails.Sum(od => od.Quantity);
+                            _context.DistributorStock.Update(distributorStock);
+                        }
                     }
+                    else if (order.OrderType == "Retailer")
+                    {
+                        var warehouseStock = stock as WarehouseStock;
+                        if (warehouseStock != null)
+                        {
+                            warehouseStock.Quantity += orderDetails.Sum(od => od.Quantity);
+                            _context.WarehouseStock.Update(warehouseStock);
+                        }
+                    }
+                }else if (request.Status == "Denied"){
+                    order.OrderStatus = "Accepted";
                 }
-                else if (order.OrderType == "Retailer")
+            } else if (order.OrderStatus == "Refund Pending Pending")
+            {
+                _logger.LogWarning($"Not Hehe");
+                // Update order status based on refund status
+                if (request.Status == "Approved")
                 {
-                    var warehouseStock = stock as WarehouseStock;
-                    if (warehouseStock != null)
-                    {
-                        warehouseStock.Quantity += orderDetails.Sum(od => od.Quantity);
-                        _context.WarehouseStock.Update(warehouseStock);
-                    }
+                    order.OrderStatus = "Cancelled";
+                }
+                else if (request.Status == "Denied")
+                {
+                    order.OrderStatus = "Accepted";
                 }
             }
-            else if (request.Status == "Denied")
-            {
-                order.OrderStatus = "Accepted";
-            }
 
-            try
+
+
+                try
             {
                 _context.RefundRequest.Update(refund);
                 _context.Orders.Update(order);
@@ -610,14 +637,9 @@ namespace WholesaleDistributionApp.Controllers
                 return Json(new { success = false, message = "Order not found." });
             }
 
-            var userInfo = await _context.UserInfo
-                .Where(ui => ui.UserId == stock.StockDistributorId)
-                .FirstOrDefaultAsync();
-
-            if (userInfo == null)
-            {
-                return Json(new { success = false, message = "User information not found." });
-            }
+            string bankName = "Dummy Bank";
+            string bankAccNum = "17834983746";
+            string qrImage = "../assets/images/warehouse/QR-code.jpg";
 
             var response = new
             {
@@ -635,9 +657,9 @@ namespace WholesaleDistributionApp.Controllers
                 },
                 refundRequest = new
                 {
-                    refundBank = userInfo.BankName,
-                    bankAccNum = userInfo.BankAccNo,
-                    qrImage = userInfo.QRImgURL
+                    refundBank = bankName,
+                    bankAccNum = bankAccNum,
+                    qrImage = qrImage
                 }
             };
 

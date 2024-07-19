@@ -13,10 +13,12 @@ namespace WholesaleDistributionApp.Controllers
     {
         private readonly WholesaleDistributionAppContext _context;
         private readonly UserManager<WholesaleDistributionAppUser> _userManager;
-        public RetailerController(WholesaleDistributionAppContext context, UserManager<WholesaleDistributionAppUser> userManager)
+        private readonly ILogger<RetailerController> _logger;
+        public RetailerController(WholesaleDistributionAppContext context, UserManager<WholesaleDistributionAppUser> userManager, ILogger<RetailerController> logger)
         {
             _context = context;
             _userManager = userManager;
+            _logger = logger;
         }
         public IActionResult ViewProducts(string searchString)
         {
@@ -34,6 +36,44 @@ namespace WholesaleDistributionApp.Controllers
             }
 
             return View(stocks.ToList());
+        }
+
+        public async Task<IActionResult> GetOrderDetails(string orderIdentifier)
+        {
+            _logger.LogInformation($"GetOrderDetails called with orderIdentifier: {orderIdentifier}");
+
+            if (string.IsNullOrEmpty(orderIdentifier))
+            {
+                _logger.LogWarning("Order identifier is required but was not provided.");
+                return Json(new { success = false, message = "Order identifier is required." });
+            }
+
+            orderIdentifier = orderIdentifier.ToLower();
+
+            var orders = await _context.OrderDetails
+                .Include(od => od.WarehouseStock)
+                .Where(od => od.OrderId.ToString().ToLower() == orderIdentifier)
+                .ToListAsync();
+
+            if (orders == null || !orders.Any())
+            {
+                _logger.LogWarning($"Order not found for orderIdentifier: {orderIdentifier}");
+                return Json(new { success = false, message = "Order not found." });
+            }
+
+            var orderDetails = orders.Select(order => new
+            {
+                order.OrderId,
+                order.OrderDetailsId,
+                StockId = order.StockId != null ? order.StockId : "No id found",
+                StockName = order.WarehouseStock != null ? order.WarehouseStock.ItemName : "Stock Name Not Available",
+                StockImage = order.WarehouseStock != null ? order.WarehouseStock.ImgDownloadURL : null,
+                order.Quantity,
+                order.Subtotal
+            }).ToList();
+
+            _logger.LogInformation($"Order details retrieved successfully for orderIdentifier: {orderIdentifier}");
+            return Json(new { success = true, orderDetails });
         }
 
         [HttpPost]
@@ -255,7 +295,7 @@ namespace WholesaleDistributionApp.Controllers
                     RequestDate = DateTime.UtcNow,
                     RefundAmount = refundAmount,
                     RefundStatus = "Pending",
-                    RefundType = "Warehouse",
+                    RefundType = "Retailer",
                     OrderId = orderId
                 };
 
