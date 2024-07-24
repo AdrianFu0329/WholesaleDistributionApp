@@ -637,6 +637,15 @@ namespace WholesaleDistributionApp.Controllers
                 return Json(new { success = false, message = "Order not found." });
             }
 
+            var userInfo = await _context.UserInfo
+                .Where(ui => ui.UserId == order.RetailerId)
+                .FirstOrDefaultAsync();
+
+            if (userInfo == null)
+            {
+                return Json(new { success = false, message = "User information not found." });
+            }
+
             string bankName = "Dummy Bank";
             string bankAccNum = "17834983746";
             string qrImage = "../assets/images/warehouse/QR-code.jpg";
@@ -657,6 +666,7 @@ namespace WholesaleDistributionApp.Controllers
                 },
                 refundRequest = new
                 {
+                    emailAddress = userInfo.Email,
                     refundBank = bankName,
                     bankAccNum = bankAccNum,
                     qrImage = qrImage

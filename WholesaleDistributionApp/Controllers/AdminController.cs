@@ -1342,6 +1342,7 @@ namespace WholesaleDistributionApp.Controllers
                 },
                 refundRequest = new
                 {
+                    emailAddress = userInfo.Email,
                     refundBank = userInfo.BankName,
                     bankAccNum = userInfo.BankAccNo,
                     qrImage = userInfo.QRImgURL

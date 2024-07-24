@@ -132,6 +132,7 @@
                 <p><strong>Item Name:</strong> <span id="purchaseItemName"></span></p>
                 <p><strong>Quantity:</strong> <span id="purchaseQuantity"></span></p>
                 <p><strong>Total Amount:</strong> <span id="refundAmount"></span></p>
+                <p><strong>Email Address:</strong> <span id="emailAddress"></span></p>
                 <p><strong>Refund Bank:</strong> <span id="refundBank"></span></p>
                 <p><strong>Bank Account No.:</strong> <span id="bankAccNum"></span></p>
                 <p><strong>Duitnow QR Code:</strong></p>
@@ -154,6 +155,7 @@
                         $('#purchaseItemName').text(response.stock.itemName);
                         $('#purchaseQuantity').text(response.orderDetails.quantity);
                         $('#refundAmount').text(response.orderDetails.totalAmount);
+                        $('#emailAddress').text(response.refundRequest.emailAddress);
                         $('#refundBank').text(response.refundRequest.refundBank);
                         $('#bankAccNum').text(response.refundRequest.bankAccNum);
                         $('#qrImage').attr('src', response.refundRequest.qrImage);
