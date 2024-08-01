@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using WholesaleDistributionApp.Areas.Identity.Data;
 using WholesaleDistributionApp.Data;
 using WholesaleDistributionApp.Models;
+using WholesaleDistributionApp.Services;
 
 namespace WholesaleDistributionApp.Controllers
 {
@@ -28,13 +29,15 @@ namespace WholesaleDistributionApp.Controllers
         private readonly IServiceProvider _serviceProvider;
         private readonly FileService _fileService;
         private readonly StockService _stockService;
+        private readonly S3Service _s3Service;
 
         // Constructor with dependency injection for WholesaleDistributionAppContext
         public AdminController(WholesaleDistributionAppContext context, UserManager<WholesaleDistributionAppUser> userManager,
         IUserStore<WholesaleDistributionAppUser> userStore,
         ILogger<AdminController> logger,
         IServiceProvider serviceProvider,
-        FileService fileService)
+        FileService fileService, 
+        S3Service s3Service)
         {
             _context = context;
             _userManager = userManager;
@@ -43,6 +46,7 @@ namespace WholesaleDistributionApp.Controllers
             _logger = logger;
             _serviceProvider = serviceProvider;
             _fileService = fileService;
+            _s3Service = s3Service;
         }
 
         public async Task<IActionResult> Index()
@@ -1325,6 +1329,8 @@ namespace WholesaleDistributionApp.Controllers
             {
                 return Json(new { success = false, message = "User information not found." });
             }
+
+            var qrImageUrl = _s3Service.GetFileUrl(userInfo.QRImgURL);
 
             var response = new
             {

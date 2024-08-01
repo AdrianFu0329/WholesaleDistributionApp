@@ -14,6 +14,7 @@ using Microsoft.Extensions.Hosting;
 using WholesaleDistributionApp.Areas.Identity.Data;
 using WholesaleDistributionApp.Data;
 using WholesaleDistributionApp.Models;
+using WholesaleDistributionApp.Services;
 
 namespace WholesaleDistributionApp.Areas.Identity.Pages.Account.Manage
 {
@@ -22,18 +23,24 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account.Manage
         private readonly WholesaleDistributionAppContext _context;
         private readonly UserManager<WholesaleDistributionAppUser> _userManager;
         private readonly SignInManager<WholesaleDistributionAppUser> _signInManager;
+        private readonly S3Service _s3Service;
+        private readonly ILogger<RegisterModel> _logger;
         private readonly IWebHostEnvironment _environment;
 
         public IndexModel(
             UserManager<WholesaleDistributionAppUser> userManager,
             SignInManager<WholesaleDistributionAppUser> signInManager,
             WholesaleDistributionAppContext context,
-            IWebHostEnvironment environment)
+            IWebHostEnvironment environment,
+            S3Service s3Service,
+            ILogger<RegisterModel> logger)
         {
             _context = context;
             _userManager = userManager;
             _signInManager = signInManager;
             _environment = environment;
+            _s3Service = s3Service;
+            _logger = logger;
         }
 
         /// <summary>
@@ -138,17 +145,35 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account.Manage
                 return Page();
             }
 
+            string imagePath = null;
             // Handle file upload
             if (Input.ImageFile != null)
             {
-                var uploadsFolder = Path.Combine(_environment.WebRootPath, "images", "qr");
+                // Ensure the folder path for S3 key
                 var uniqueFileName = Guid.NewGuid().ToString() + "_" + Input.ImageFile.FileName;
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                var s3Key = Path.Combine("qr", uniqueFileName).Replace("\\", "/");
+
+                // Save the file locally (temporary)
+                var tempFilePath = Path.Combine(Path.GetTempPath(), uniqueFileName);
+                using (var stream = new FileStream(tempFilePath, FileMode.Create))
                 {
-                    await Input.ImageFile.CopyToAsync(fileStream);
+                    await Input.ImageFile.CopyToAsync(stream);
                 }
-                userInfo.QRImgURL = "/images/qr" + uniqueFileName;
+
+                // Upload the file to S3
+                await _s3Service.UploadFileAsync(s3Key, tempFilePath);
+
+                // Get the URL
+                var s3Url = _s3Service.GetFileUrl(s3Key);
+
+                // Delete the temporary local file
+                if (System.IO.File.Exists(tempFilePath))
+                {
+                    System.IO.File.Delete(tempFilePath);
+                }
+
+                imagePath = s3Url;
+                _logger.LogInformation("Image path:" + imagePath);
             }
 
             // Update other fields
@@ -157,6 +182,12 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account.Manage
             userInfo.Email = Input.Email;
             userInfo.BankName = Input.BankName;
             userInfo.BankAccNo = Input.BankAccNo;
+
+            // Update the QR image URL if a new image was uploaded
+            if (!string.IsNullOrEmpty(imagePath))
+            {
+                userInfo.QRImgURL = imagePath;
+            }
 
             _context.UserInfo.Update(userInfo);
             await _context.SaveChangesAsync();

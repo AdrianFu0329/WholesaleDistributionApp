@@ -7,74 +7,74 @@
 
 <style>
     .qr-image-container {
-        width: 250px; 
+        width: 250px;
         height: 250px;
         overflow: hidden;
         border: 1px solid #ddd;
-        margin-bottom: 10px; 
+        margin-bottom: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-left: auto; 
+        margin-left: auto;
         margin-right: auto;
     }
 
-    .qr-image-container img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
+        .qr-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 </style>
 
 <partial name="_StatusMessage" for="StatusMessage" />
-    <div class="tab-pane fade active show" id="account-general">
-        <form id="profile-form" method="post" enctype="multipart/form-data">
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-            <div class="card-body">
-                <div class="form-group">
-                    <label class="form-label">Username</label>
-                    <input asp-for="Username" class="form-control" placeholder="Please choose your username." disabled />
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Phone Number</label>
-                    <input asp-for="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number." />
-                    <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Address</label>
-                    <input asp-for="Input.Address" class="form-control" placeholder="Please enter your address." />
-                    <span asp-validation-for="Input.Address" class="text-danger"></span>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input asp-for="Input.Email" class="form-control" placeholder="Please enter your email." />
-                    <span asp-validation-for="Input.Email" class="text-danger"></span>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Bank Name</label>
-                    <input asp-for="Input.BankName" class="form-control" placeholder="Please enter your bank name." />
-                    <span asp-validation-for="Input.BankName" class="text-danger"></span>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Bank Account Number</label>
-                    <input asp-for="Input.BankAccNo" class="form-control" placeholder="Please enter your bank account number." />
-                    <span asp-validation-for="Input.BankAccNo" class="text-danger"></span>
-                </div>
-                <div class="form-group mb-3">
-                    <label for="qrImage" class="control-label">Your Duitnow QR Image</label>
-                    @if (!string.IsNullOrEmpty(Model.Input.QRImgURL))
-                    {
-                        <div class="mb-3">
-                            <img src="@Model.Input.QRImgURL" alt="QR Image" class="qr-image-container" />
-                        </div>
-                    }
-                    <input type="file" id="qrImage" name="ImageFile" class="form-control" />
-                    <span asp-validation-for="Input.ImageFile" class="text-danger"></span>
-                </div>
-                <button id="update-profile-button" type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
+<div class="tab-pane fade active show" id="account-general">
+    <form id="profile-form" method="post" enctype="multipart/form-data">
+        <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+        <div class="card-body">
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input asp-for="Username" class="form-control" placeholder="Please choose your username." disabled />
             </div>
-        </form>
-    </div>
+            <div class="form-group">
+                <label class="form-label">Phone Number</label>
+                <input asp-for="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number." />
+                <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Address</label>
+                <input asp-for="Input.Address" class="form-control" placeholder="Please enter your address." />
+                <span asp-validation-for="Input.Address" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input asp-for="Input.Email" class="form-control" placeholder="Please enter your email." />
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Bank Name</label>
+                <input asp-for="Input.BankName" class="form-control" placeholder="Please enter your bank name." />
+                <span asp-validation-for="Input.BankName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Bank Account Number</label>
+                <input asp-for="Input.BankAccNo" class="form-control" placeholder="Please enter your bank account number." />
+                <span asp-validation-for="Input.BankAccNo" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label for="qrImage" class="control-label">Your Duitnow QR Image</label>
+                @if (!string.IsNullOrEmpty(Model.Input.QRImgURL))
+                {
+                    <div class="mb-3 qr-image-container">
+                        <img src="@Model.Input.QRImgURL" alt="QR Image" />
+                    </div>
+                }
+                <input type="file" id="qrImage" name="ImageFile" class="form-control" />
+                <span asp-validation-for="Input.ImageFile" class="text-danger"></span>
+            </div>
+            <button id="update-profile-button" type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
+        </div>
+    </form>
+</div>
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }

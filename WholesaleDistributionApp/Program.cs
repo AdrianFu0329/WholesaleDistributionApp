@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using WholesaleDistributionApp.Services;
 using WholesaleDistributionApp.Data;
 using WholesaleDistributionApp.Areas.Identity.Data;
 using WholesaleDistributionApp.Models;
+using Amazon.S3;
+
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("WholesaleDistributionAppContextConnection") ?? throw new InvalidOperationException("Connection string 'WholesaleDistributionAppContextConnection' not found.");
 
@@ -18,6 +21,10 @@ builder.Services.AddRazorPages();
 builder.Services.AddScoped<StockService>();
 builder.Services.AddScoped<FileService>();
 
+// AWS S3 Configuration
+builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());
+builder.Services.AddAWSService<IAmazonS3>();
+builder.Services.AddScoped<S3Service>();
 
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
