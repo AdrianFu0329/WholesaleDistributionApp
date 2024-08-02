@@ -145,45 +145,48 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account.Manage
                 return Page();
             }
 
+            _logger.LogInformation("Checking ImageFile: " + (Input.ImageFile != null ? "File exists" : "File is null"));
             string imagePath = null;
-            // Handle file upload
+
             if (Input.ImageFile != null)
             {
-                // Ensure the folder path for S3 key
+                _logger.LogInformation("Image file is not null, proceeding with upload.");
+
                 var uniqueFileName = Guid.NewGuid().ToString() + "_" + Input.ImageFile.FileName;
                 var s3Key = Path.Combine("qr", uniqueFileName).Replace("\\", "/");
 
-                // Save the file locally (temporary)
                 var tempFilePath = Path.Combine(Path.GetTempPath(), uniqueFileName);
                 using (var stream = new FileStream(tempFilePath, FileMode.Create))
                 {
                     await Input.ImageFile.CopyToAsync(stream);
                 }
 
-                // Upload the file to S3
-                await _s3Service.UploadFileAsync(s3Key, tempFilePath);
+                _logger.LogInformation($"Uploading file {tempFilePath} to S3 key {s3Key}");
 
-                // Get the URL
-                var s3Url = _s3Service.GetFileUrl(s3Key);
-
-                // Delete the temporary local file
-                if (System.IO.File.Exists(tempFilePath))
+                var uploadSuccess = await _s3Service.UploadFileAsync(s3Key, tempFilePath);
+                if (uploadSuccess)
                 {
-                    System.IO.File.Delete(tempFilePath);
-                }
+                    var s3Url = _s3Service.GetFileUrl(s3Key);
+                    imagePath = s3Url;
+                    _logger.LogInformation($"Image uploaded successfully to {imagePath}");
 
-                imagePath = s3Url;
-                _logger.LogInformation("Image path:" + imagePath);
+                    if (System.IO.File.Exists(tempFilePath))
+                    {
+                        System.IO.File.Delete(tempFilePath);
+                    }
+                }
+                else
+                {
+                    _logger.LogError("Failed to upload image to S3.");
+                }
             }
 
-            // Update other fields
             userInfo.PhoneNumber = Input.PhoneNumber;
             userInfo.Address = Input.Address;
             userInfo.Email = Input.Email;
             userInfo.BankName = Input.BankName;
             userInfo.BankAccNo = Input.BankAccNo;
 
-            // Update the QR image URL if a new image was uploaded
             if (!string.IsNullOrEmpty(imagePath))
             {
                 userInfo.QRImgURL = imagePath;

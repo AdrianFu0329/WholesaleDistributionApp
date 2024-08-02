@@ -68,7 +68,7 @@
                         <img src="@Model.Input.QRImgURL" alt="QR Image" />
                     </div>
                 }
-                <input type="file" id="qrImage" name="ImageFile" class="form-control" />
+                <input type="file" id="qrImage" name="Input.ImageFile" class="form-control" />
                 <span asp-validation-for="Input.ImageFile" class="text-danger"></span>
             </div>
             <button id="update-profile-button" type="submit" class="w-100 btn btn-lg btn-primary">Save</button>

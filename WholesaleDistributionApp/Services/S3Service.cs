@@ -37,7 +37,7 @@ namespace WholesaleDistributionApp.Services
             return $"https://{_bucketName}.s3.amazonaws.com/{fullPath}";
         }
 
-        public async Task UploadFileAsync(string keyName, string filePath)
+        public async Task<bool> UploadFileAsync(string keyName, string filePath)
         {
             try
             {
@@ -46,19 +46,21 @@ namespace WholesaleDistributionApp.Services
                     BucketName = _bucketName,
                     Key = $"{_imageFolderPath}{keyName}", // Ensure the key includes the folder path
                     FilePath = filePath,
-                    CannedACL = S3CannedACL.PublicRead
                 };
 
                 var response = await _s3Client.PutObjectAsync(putRequest);
                 Console.WriteLine("File uploaded successfully.");
+                return true;
             }
             catch (AmazonS3Exception e)
             {
                 Console.WriteLine($"Error encountered on server. Message:'{e.Message}' when writing an object");
+                return false;
             }
             catch (Exception e)
             {
                 Console.WriteLine($"Unknown error encountered. Message:'{e.Message}' when writing an object");
+                return false;
             }
         }
 

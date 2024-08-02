@@ -6,6 +6,7 @@ using System.Security.Claims;
 using WholesaleDistributionApp.Areas.Identity.Data;
 using WholesaleDistributionApp.Data;
 using WholesaleDistributionApp.Models;
+using WholesaleDistributionApp.Services;
 
 namespace WholesaleDistributionApp.Controllers
 {
@@ -14,11 +15,13 @@ namespace WholesaleDistributionApp.Controllers
         private readonly WholesaleDistributionAppContext _context;
         private readonly UserManager<WholesaleDistributionAppUser> _userManager;
         private readonly ILogger<RetailerController> _logger;
-        public RetailerController(WholesaleDistributionAppContext context, UserManager<WholesaleDistributionAppUser> userManager, ILogger<RetailerController> logger)
+        private readonly S3Service _s3Service;
+        public RetailerController(WholesaleDistributionAppContext context, UserManager<WholesaleDistributionAppUser> userManager, ILogger<RetailerController> logger, S3Service s3Service)
         {
             _context = context;
             _userManager = userManager;
             _logger = logger;
+            _s3Service = s3Service;
         }
         public IActionResult ViewProducts(string searchString)
         {
@@ -130,25 +133,41 @@ namespace WholesaleDistributionApp.Controllers
 
             try
             {
-                // Save proof of payment file to the server
                 var fileName = Path.GetFileName(proofOfPayment.FileName);
-                var directoryPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "proofOfPayments");
+                string filePath = null;
 
-                // Ensure the directory exists
-                if (!Directory.Exists(directoryPath))
+                if (proofOfPayment != null && proofOfPayment.Length > 0)
                 {
-                    Directory.CreateDirectory(directoryPath);
+                    _logger.LogInformation("Image file is not null, proceeding with upload.");
+
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + fileName;
+                    var s3Key = Path.Combine("proofOfPayment", uniqueFileName).Replace("\\", "/");
+
+                    var tempFilePath = Path.Combine(Path.GetTempPath(), uniqueFileName);
+                    using (var stream = new FileStream(tempFilePath, FileMode.Create))
+                    {
+                        await proofOfPayment.CopyToAsync(stream);
+                    }
+
+                    _logger.LogInformation($"Uploading file {tempFilePath} to S3 key {s3Key}");
+
+                    var uploadSuccess = await _s3Service.UploadFileAsync(s3Key, tempFilePath);
+                    if (uploadSuccess)
+                    {
+                        var s3Url = _s3Service.GetFileUrl(s3Key);
+                        filePath = s3Url;
+                        _logger.LogInformation($"File uploaded successfully to {filePath}");
+
+                        if (System.IO.File.Exists(tempFilePath))
+                        {
+                            System.IO.File.Delete(tempFilePath);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogError("Failed to upload file to S3.");
+                    }
                 }
-
-                var filePath = Path.Combine(directoryPath, fileName);
-
-                // Save new proof of payment
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await proofOfPayment.CopyToAsync(stream);
-                }
-
-                var imgDownloadURL = $"/proofOfPayments/{fileName}";
 
                 // Create new Order entity
                 var order = new Order
@@ -159,9 +178,13 @@ namespace WholesaleDistributionApp.Controllers
                     TotalAmount = orderDetailsList.Sum(od => od.Subtotal),
                     OrderStatus = "Pending",
                     OrderType = "Retailer",
-                    PaymentReceiptURL = imgDownloadURL,
                     StockDistributorId = "-"
                 };
+
+                if (filePath != null)
+                {
+                    order.PaymentReceiptURL = filePath;
+                }
 
                 // Save order to database
                 _context.Orders.Add(order);

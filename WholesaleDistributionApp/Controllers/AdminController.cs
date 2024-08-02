@@ -781,38 +781,45 @@ namespace WholesaleDistributionApp.Controllers
 
             try
             {
+                string imagePath = null;
+
                 // Handle image upload
                 if (ImageFile != null && ImageFile.Length > 0)
                 {
-                    var fileName = Path.GetFileName(ImageFile.FileName);
-                    var directoryPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                    _logger.LogInformation("Image file is not null, proceeding with upload.");
 
-                    // Ensure the directory exists
-                    if (!Directory.Exists(directoryPath))
-                    {
-                        Directory.CreateDirectory(directoryPath);
-                    }
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + ImageFile.FileName;
+                    var s3Key = Path.Combine("stock", uniqueFileName).Replace("\\", "/");
 
-                    var filePath = Path.Combine(directoryPath, fileName);
-
-                    // Delete previous image if it exists
-                    if (!string.IsNullOrEmpty(stock.ImgDownloadURL))
-                    {
-                        var previousImagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", stock.ImgDownloadURL.TrimStart('/'));
-                        if (System.IO.File.Exists(previousImagePath))
-                        {
-                            System.IO.File.Delete(previousImagePath);
-                        }
-                    }
-
-                    // Save new image
-                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    var tempFilePath = Path.Combine(Path.GetTempPath(), uniqueFileName);
+                    using (var stream = new FileStream(tempFilePath, FileMode.Create))
                     {
                         await ImageFile.CopyToAsync(stream);
                     }
 
-                    var imgDownloadURL = $"/images/{fileName}";
-                    stock.ImgDownloadURL = imgDownloadURL;
+                    _logger.LogInformation($"Uploading file {tempFilePath} to S3 key {s3Key}");
+
+                    var uploadSuccess = await _s3Service.UploadFileAsync(s3Key, tempFilePath);
+                    if (uploadSuccess)
+                    {
+                        var s3Url = _s3Service.GetFileUrl(s3Key);
+                        imagePath = s3Url;
+                        _logger.LogInformation($"Image uploaded successfully to {imagePath}");
+
+                        if (System.IO.File.Exists(tempFilePath))
+                        {
+                            System.IO.File.Delete(tempFilePath);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogError("Failed to upload image to S3.");
+                    }
+
+                    if (imagePath != null)
+                    {
+                        stock.ImgDownloadURL = imagePath;
+                    }
                 }
 
                 _context.WarehouseStock.Update(stock);
@@ -912,25 +919,46 @@ namespace WholesaleDistributionApp.Controllers
             };
 
             var fileName = Path.GetFileName(proofOfPayment.FileName);
-            var directoryPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "proofOfPayments");
+            string filePath = null;
 
-            // Ensure the directory exists
-            if (!Directory.Exists(directoryPath))
+            if (proofOfPayment != null && proofOfPayment.Length > 0)
             {
-                Directory.CreateDirectory(directoryPath);
+                _logger.LogInformation("Image file is not null, proceeding with upload.");
+
+                var uniqueFileName = Guid.NewGuid().ToString() + "_" + fileName;
+                var s3Key = Path.Combine("proofOfPayment", uniqueFileName).Replace("\\", "/");
+
+                var tempFilePath = Path.Combine(Path.GetTempPath(), uniqueFileName);
+                using (var stream = new FileStream(tempFilePath, FileMode.Create))
+                {
+                    await proofOfPayment.CopyToAsync(stream);
+                }
+
+                _logger.LogInformation($"Uploading file {tempFilePath} to S3 key {s3Key}");
+
+                var uploadSuccess = await _s3Service.UploadFileAsync(s3Key, tempFilePath);
+                if (uploadSuccess)
+                {
+                    var s3Url = _s3Service.GetFileUrl(s3Key);
+                    filePath = s3Url;
+                    _logger.LogInformation($"File uploaded successfully to {filePath}");
+
+                    if (System.IO.File.Exists(tempFilePath))
+                    {
+                        System.IO.File.Delete(tempFilePath);
+                    }
+                }
+                else
+                {
+                    _logger.LogError("Failed to upload file to S3.");
+                }
             }
 
-            var filePath = Path.Combine(directoryPath, fileName);
-
-            // Save new proof of payment
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            if (filePath != null)
             {
-                await proofOfPayment.CopyToAsync(stream);
+                order.PaymentReceiptURL = filePath;
             }
-
-            var imgDownloadURL = $"/proofOfPayments/{fileName}";
-            order.PaymentReceiptURL = imgDownloadURL;
-
+            
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
 
@@ -1329,8 +1357,6 @@ namespace WholesaleDistributionApp.Controllers
             {
                 return Json(new { success = false, message = "User information not found." });
             }
-
-            var qrImageUrl = _s3Service.GetFileUrl(userInfo.QRImgURL);
 
             var response = new
             {
