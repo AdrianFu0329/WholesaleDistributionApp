@@ -33,6 +33,7 @@ builder.Services.AddLogging(logging =>
     logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
     logging.AddConsole(); // Add console logging provider
     logging.AddDebug();   // Add debug output logging provider
+    logging.AddAWSProvider(builder.Configuration.GetAWSLoggingConfigSection());
     // Add other logging providers as needed (e.g., file logging, event log, etc.)
 });
 

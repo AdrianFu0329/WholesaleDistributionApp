@@ -5,17 +5,20 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using WholesaleDistributionApp.Controllers;
 
 namespace WholesaleDistributionApp.Services
 {
     public class S3Service
     {
         private readonly IAmazonS3 _s3Client;
+        private readonly ILogger<S3Service> _logger;
         private readonly string _bucketName;
         private readonly string _imageFolderPath = "images/"; // Ensure this is correctly set
 
-        public S3Service(IConfiguration configuration)
+        public S3Service(IConfiguration configuration, ILogger<S3Service> logger)
         {
+            _logger = logger;
             // Read AWS options from configuration
             var awsOptions = configuration.GetAWSOptions();
             _s3Client = awsOptions.CreateServiceClient<IAmazonS3>();
@@ -54,11 +57,13 @@ namespace WholesaleDistributionApp.Services
             }
             catch (AmazonS3Exception e)
             {
+                _logger.LogError(e.Message);
                 Console.WriteLine($"Error encountered on server. Message:'{e.Message}' when writing an object");
                 return false;
             }
             catch (Exception e)
             {
+                _logger.LogError(e.Message);
                 Console.WriteLine($"Unknown error encountered. Message:'{e.Message}' when writing an object");
                 return false;
             }
@@ -85,10 +90,12 @@ namespace WholesaleDistributionApp.Services
             }
             catch (AmazonS3Exception e)
             {
+                _logger.LogError(e.Message);
                 Console.WriteLine($"Error encountered on server. Message:'{e.Message}' when reading an object");
             }
             catch (Exception e)
             {
+                _logger.LogError(e.Message);
                 Console.WriteLine($"Unknown error encountered. Message:'{e.Message}' when reading an object");
             }
         }

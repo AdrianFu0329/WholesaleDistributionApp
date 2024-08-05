@@ -14,6 +14,7 @@ using WholesaleDistributionApp.Areas.Identity.Data;
 using WholesaleDistributionApp.Data;
 using WholesaleDistributionApp.Models;
 using WholesaleDistributionApp.Services;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WholesaleDistributionApp.Controllers
 {
@@ -111,6 +112,7 @@ namespace WholesaleDistributionApp.Controllers
             {
                 // Handle the exception (log it, etc.)
                 // You can log the error using your logging mechanism here
+                _logger.LogError(ex.Message);
                 return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
             }
         }
@@ -245,6 +247,7 @@ namespace WholesaleDistributionApp.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError($"Error loading data: {ex.Message}");
                 return BadRequest("Error loading data.");
             }
         }
@@ -315,10 +318,12 @@ namespace WholesaleDistributionApp.Controllers
                     })
                 };
 
+                _logger.LogError("View Users SUccessful");
                 return Json(responseData);
             }
             catch (Exception ex)
             {
+                _logger.LogError($"Error loading data: {ex.Message}");
                 return BadRequest("Error loading data.");
             }
         }
@@ -381,10 +386,12 @@ namespace WholesaleDistributionApp.Controllers
 
                 // If creation failed, collect errors and return them
                 var errors = result.Errors.Select(e => e.Description).ToList();
+                _logger.LogError($"Error: {errors}");
                 return Json(new { success = false, message = "Failed to create user", errors = errors });
             }
 
             var modelErrors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            _logger.LogError($"Error: {modelErrors}");
             return Json(new { success = false, message = modelErrors, errors = modelErrors });
         }
 
@@ -392,6 +399,7 @@ namespace WholesaleDistributionApp.Controllers
         {
             if (!_userManager.SupportsUserEmail)
             {
+                _logger.LogError("The default UI requires a user store with email support.");
                 throw new NotSupportedException("The default UI requires a user store with email support.");
             }
             return (IUserEmailStore<WholesaleDistributionAppUser>)_userStore;
@@ -451,6 +459,7 @@ namespace WholesaleDistributionApp.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
                 return Json(new { success = false, message = "An error occurred while fetching user.", error = ex.Message });
             }
         }
@@ -483,6 +492,7 @@ namespace WholesaleDistributionApp.Controllers
             catch (Exception ex)
             {
                 // Handle any exceptions that occur during the process
+                _logger.LogError(ex.Message);
                 return Json(new { success = false, message = "An error occurred while fetching user.", error = ex.Message });
             }
         }
@@ -538,6 +548,7 @@ namespace WholesaleDistributionApp.Controllers
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex.Message);
                     return Json(new { success = false, message = "An error occurred while updating user.", error = ex.Message });
                 }
             }
@@ -598,6 +609,7 @@ namespace WholesaleDistributionApp.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
                 return Json(new { success = false, message = "An error occurred while deleting user.", error = ex.Message });
             }
         }
@@ -671,7 +683,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (string.IsNullOrEmpty(stockIdentifier))
             {
-                _logger.LogWarning("Stock identifier is required but was not provided.");
+                _logger.LogError("Stock identifier is required but was not provided.");
                 return Json(new { success = false, message = "Stock identifier is required." });
             }
 
@@ -684,7 +696,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (stock == null)
             {
-                _logger.LogWarning($"Stock not found for stockIdentifier: {stockIdentifier}");
+                _logger.LogError($"Stock not found for stockIdentifier: {stockIdentifier}");
                 return Json(new { success = false, message = "Stock not found." });
             }
 
@@ -698,7 +710,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (string.IsNullOrEmpty(stockIdentifier))
             {
-                _logger.LogWarning("Stock identifier is required but was not provided.");
+                _logger.LogError("Stock identifier is required but was not provided.");
                 return Json(new { success = false, message = "Stock identifier is required." });
             }
 
@@ -713,7 +725,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (stock == null)
             {
-                _logger.LogWarning($"Stock not found for stockIdentifier: {stockIdentifier}");
+                _logger.LogError($"Stock not found for stockIdentifier: {stockIdentifier}");
                 return Json(new { success = false, message = "Stock not found." });
             }
 
@@ -737,7 +749,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (string.IsNullOrEmpty(stockIdentifier))
             {
-                _logger.LogWarning("Stock identifier is required but was not provided.");
+                _logger.LogError("Stock identifier is required but was not provided.");
                 return Json(new { success = false, message = "Stock identifier is required." });
             }
 
@@ -750,7 +762,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (stock == null)
             {
-                _logger.LogWarning($"Stock not found for stockIdentifier: {stockIdentifier}");
+                _logger.LogError($"Stock not found for stockIdentifier: {stockIdentifier}");
                 return Json(new { success = false, message = "Stock not found." });
             }
 
@@ -764,12 +776,14 @@ namespace WholesaleDistributionApp.Controllers
         {
             if (model == null || string.IsNullOrEmpty(model.StockId))
             {
+                _logger.LogError("Invalid stock data.");
                 return Json(new { success = false, message = "Invalid stock data." });
             }
 
             var stock = await _context.WarehouseStock.FindAsync(model.StockId);
             if (stock == null)
             {
+                _logger.LogError("Stock not found.");
                 return Json(new { success = false, message = "Stock not found." });
             }
 
@@ -830,6 +844,7 @@ namespace WholesaleDistributionApp.Controllers
             catch (Exception ex)
             {
                 // Log the exception or handle it appropriately
+                _logger.LogError(ex.Message);
                 return Json(new { success = false, message = $"Error updating stock: {ex.Message}" });
             }
         }
@@ -845,12 +860,14 @@ namespace WholesaleDistributionApp.Controllers
         {
             if (string.IsNullOrEmpty(stockId))
             {
+                _logger.LogError("Invalid stock ID");
                 return Json(new { success = false, message = "Invalid stock ID" });
             }
 
             var stock = await _context.WarehouseStock.FindAsync(stockId);
             if (stock == null)
             {
+                _logger.LogError("Stock not found");
                 return Json(new { success = false, message = "Stock not found" });
             }
 
@@ -865,12 +882,14 @@ namespace WholesaleDistributionApp.Controllers
         {
             if (string.IsNullOrEmpty(orderDetails))
             {
+                _logger.LogError("No items selected for order.");
                 return Json(new { success = false, message = "No items selected for order." });
             }
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
+                _logger.LogError("User is not authenticated.");
                 return Json(new { success = false, message = "User is not authenticated." });
             }
 
@@ -878,6 +897,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (orderDetailsList == null || orderDetailsList.Count == 0)
             {
+                _logger.LogError("No items selected for order.");
                 return Json(new { success = false, message = "No items selected for order." });
             }
 
@@ -885,12 +905,14 @@ namespace WholesaleDistributionApp.Controllers
             {
                 if (detail.Quantity <= 0)
                 {
+                    _logger.LogError("Quantity must be greater than 0.");
                     return Json(new { success = false, message = "Quantity must be greater than 0." });
                 }
             }
 
             if (proofOfPayment == null || proofOfPayment.Length == 0)
             {
+                _logger.LogError("Proof of payment is required.");
                 return Json(new { success = false, message = "Proof of payment is required." });
             }
 
@@ -898,11 +920,13 @@ namespace WholesaleDistributionApp.Controllers
             var fileExtension = Path.GetExtension(proofOfPayment.FileName).ToLowerInvariant();
             if (!allowedExtensions.Contains(fileExtension))
             {
+                _logger.LogError("Invalid file type. Only JPG, JPEG, PNG, and PDF files are allowed.");
                 return Json(new { success = false, message = "Invalid file type. Only JPG, JPEG, PNG, and PDF files are allowed." });
             }
 
             if (proofOfPayment.Length > 5 * 1024 * 1024) // 5MB size limit
             {
+                _logger.LogError("File size exceeds 5MB limit.");
                 return Json(new { success = false, message = "File size exceeds 5MB limit." });
             }
 
@@ -987,12 +1011,14 @@ namespace WholesaleDistributionApp.Controllers
             var refund = await _context.RefundRequest.FindAsync(request.RefundId);
             if (refund == null)
             {
+                _logger.LogError("Refund not found.");
                 return Json(new { success = false, message = "Refund not found." });
             }
 
             var order = await _context.Orders.FindAsync(Guid.Parse(refund.OrderId));
             if (order == null)
             {
+                _logger.LogError("Order not found.");
                 return Json(new { success = false, message = "Order not found." });
             }
 
@@ -1001,6 +1027,7 @@ namespace WholesaleDistributionApp.Controllers
                 .ToListAsync();
             if (orderDetails == null || !orderDetails.Any())
             {
+                _logger.LogError("Order Details not found.");
                 return Json(new { success = false, message = "Order Details not found." });
             }
 
@@ -1026,6 +1053,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (!isStockFound)
             {
+                _logger.LogError($"{order.OrderType} Stock not found.");
                 return Json(new { success = false, message = $"{order.OrderType} Stock not found." });
             }
 
@@ -1086,6 +1114,7 @@ namespace WholesaleDistributionApp.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError($"Error updating status: {ex.Message}");
                 return Json(new { success = false, message = $"Error updating status: {ex.Message}" });
             }
         }
@@ -1160,7 +1189,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (string.IsNullOrEmpty(orderIdentifier))
             {
-                _logger.LogWarning("Order identifier is required but was not provided.");
+                _logger.LogError("Order identifier is required but was not provided.");
                 return Json(new { success = false, message = "Order identifier is required." });
             }
 
@@ -1174,7 +1203,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (orders == null || !orders.Any())
             {
-                _logger.LogWarning($"Order not found for orderIdentifier: {orderIdentifier}");
+                _logger.LogError($"Order not found for orderIdentifier: {orderIdentifier}");
                 return Json(new { success = false, message = "Order not found." });
             }
 
@@ -1270,6 +1299,7 @@ namespace WholesaleDistributionApp.Controllers
                 }
                 else
                 {
+                    _logger.LogError("Order not found");
                     return Json(new { success = false, message = "Order not found." });
                 }
             }
@@ -1318,6 +1348,7 @@ namespace WholesaleDistributionApp.Controllers
             var refundRequest = await _context.RefundRequest.FindAsync(refundId);
             if (refundRequest == null)
             {
+                _logger.LogError("Refund request not found");
                 return Json(new { success = false, message = "Refund request not found." });
             }
 
@@ -1327,6 +1358,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (orderDetails == null)
             {
+                _logger.LogError("Order details not found.");
                 return Json(new { success = false, message = "Order details not found." });
             }
 
@@ -1336,6 +1368,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (stock == null)
             {
+                _logger.LogError("Stock details not found.");
                 return Json(new { success = false, message = "Stock details not found." });
             }
 
@@ -1345,6 +1378,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (order == null)
             {
+                _logger.LogError("Order not found.");
                 return Json(new { success = false, message = "Order not found." });
             }
 
@@ -1355,6 +1389,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (userInfo == null)
             {
+                _logger.LogError("User information not found.");
                 return Json(new { success = false, message = "User information not found." });
             }
 

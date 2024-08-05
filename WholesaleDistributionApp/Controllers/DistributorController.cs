@@ -96,6 +96,7 @@ namespace WholesaleDistributionApp.Controllers
             {
                 // Handle the exception (log it, etc.)
                 // You can log the error using your logging mechanism here
+                _logger.LogError(ex.Message);
                 return View("Error", new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
             }
         }
@@ -249,14 +250,14 @@ namespace WholesaleDistributionApp.Controllers
                 }
                 catch (Exception ex)
                 {
-                    // Log the exception or handle it appropriately
+                    _logger.LogError(ex.Message);
                     return Json(new { success = false, message = ex.Message });
                 }
             }
 
             // If ModelState is not valid, return the validation errors
             var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-            _logger.LogWarning($"Validation failed while adding stock. Errors: {string.Join("; ", errors)}");
+            _logger.LogError($"Validation failed while adding stock. Errors: {string.Join("; ", errors)}");
             return Json(new { success = false, message = "Validation failed", errors });
         }
 
@@ -266,7 +267,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (string.IsNullOrEmpty(stockIdentifier))
             {
-                _logger.LogWarning("Stock identifier is required but was not provided.");
+                _logger.LogError("Stock identifier is required but was not provided.");
                 return Json(new { success = false, message = "Stock identifier is required." });
             }
 
@@ -279,7 +280,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (stock == null)
             {
-                _logger.LogWarning($"Stock not found for stockIdentifier: {stockIdentifier}");
+                _logger.LogError($"Stock not found for stockIdentifier: {stockIdentifier}");
                 return Json(new { success = false, message = "Stock not found." });
             }
 
@@ -293,12 +294,14 @@ namespace WholesaleDistributionApp.Controllers
         {
             if (model == null || string.IsNullOrEmpty(model.StockId))
             {
+                _logger.LogError("Invalid stock data.");
                 return Json(new { success = false, message = "Invalid stock data." });
             }
 
             var stock = await _context.DistributorStock.FindAsync(model.StockId);
             if (stock == null)
             {
+                _logger.LogError("Stock not found.");
                 return Json(new { success = false, message = "Stock not found." });
             }
 
@@ -382,18 +385,19 @@ namespace WholesaleDistributionApp.Controllers
         {
             if (string.IsNullOrEmpty(stockId))
             {
+                _logger.LogError("Invalid stock ID");
                 return Json(new { success = false, message = "Invalid stock ID" });
             }
 
             var stock = await _context.DistributorStock.FindAsync(stockId);
             if (stock == null)
             {
+                _logger.LogError("Stock not found");
                 return Json(new { success = false, message = "Stock not found" });
             }
 
             _context.DistributorStock.Remove(stock);
             await _context.SaveChangesAsync();
-
             return Json(new { success = true, message = "Stock deleted successfully" });
         }
 
@@ -404,7 +408,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (string.IsNullOrEmpty(orderIdentifier))
             {
-                _logger.LogWarning("Order identifier is required but was not provided.");
+                _logger.LogError("Order identifier is required but was not provided.");
                 return Json(new { success = false, message = "Order identifier is required." });
             }
 
@@ -417,7 +421,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (orders == null || !orders.Any())
             {
-                _logger.LogWarning($"Order not found for orderIdentifier: {orderIdentifier}");
+                _logger.LogError($"Order not found for orderIdentifier: {orderIdentifier}");
                 return Json(new { success = false, message = "Order not found." });
             }
 
@@ -474,6 +478,7 @@ namespace WholesaleDistributionApp.Controllers
                 }
                 else
                 {
+                    _logger.LogError("Order not found.");
                     return Json(new { success = false, message = "Order not found." });
                 }
             }
@@ -510,6 +515,7 @@ namespace WholesaleDistributionApp.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
                 return Json(new { success = false, message = ex.Message });
             }
         }
@@ -521,12 +527,14 @@ namespace WholesaleDistributionApp.Controllers
             var refund = await _context.RefundRequest.FindAsync(request.RefundId);
             if (refund == null)
             {
+                _logger.LogError("Refund not found.");
                 return Json(new { success = false, message = "Refund not found." });
             }
 
             var order = await _context.Orders.FindAsync(Guid.Parse(refund.OrderId));
             if (order == null)
             {
+                _logger.LogError("Order not found.");
                 return Json(new { success = false, message = "Order not found." });
             }
 
@@ -535,6 +543,7 @@ namespace WholesaleDistributionApp.Controllers
                 .ToListAsync();
             if (orderDetails == null || !orderDetails.Any())
             {
+                _logger.LogError("Order Details not found.");
                 return Json(new { success = false, message = "Order Details not found." });
             }
 
@@ -560,6 +569,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (!isStockFound)
             {
+                _logger.LogError($"{order.OrderType} Stock not found.");
                 return Json(new { success = false, message = $"{order.OrderType} Stock not found." });
             }
 
@@ -620,6 +630,7 @@ namespace WholesaleDistributionApp.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError($"Error updating status: {ex.Message}");
                 return Json(new { success = false, message = $"Error updating status: {ex.Message}" });
             }
         }
@@ -637,6 +648,7 @@ namespace WholesaleDistributionApp.Controllers
             var refundRequest = await _context.RefundRequest.FindAsync(refundId);
             if (refundRequest == null)
             {
+                _logger.LogError("Refund request not found.");
                 return Json(new { success = false, message = "Refund request not found." });
             }
 
@@ -646,6 +658,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (orderDetails == null)
             {
+                _logger.LogError("Order details not found.");
                 return Json(new { success = false, message = "Order details not found." });
             }
 
@@ -655,6 +668,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (stock == null)
             {
+                _logger.LogError("Stock details not found.");
                 return Json(new { success = false, message = "Stock details not found." });
             }
 
@@ -664,6 +678,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (order == null)
             {
+                _logger.LogError("Order not found.");
                 return Json(new { success = false, message = "Order not found." });
             }
 
