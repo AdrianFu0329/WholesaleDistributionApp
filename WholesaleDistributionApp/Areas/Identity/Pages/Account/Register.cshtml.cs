@@ -24,6 +24,7 @@ using Microsoft.Extensions.Logging;
 using WholesaleDistributionApp.Areas.Identity.Data;
 using WholesaleDistributionApp.Data;
 using WholesaleDistributionApp.Models;
+using WholesaleDistributionApp.Services;
 
 namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
 {
@@ -37,6 +38,7 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
         private readonly IEmailSender _emailSender;
         private readonly IServiceProvider _serviceProvider;
         private readonly IWebHostEnvironment _environment;
+        private readonly S3Service _s3Service;
 
         public RegisterModel(
             UserManager<WholesaleDistributionAppUser> userManager,
@@ -45,7 +47,8 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
             ILogger<RegisterModel> logger,
             IEmailSender emailSender,
             IServiceProvider serviceProvider,
-            IWebHostEnvironment environment)
+            IWebHostEnvironment environment,
+            S3Service s3Service)
         {
             _userManager = userManager;
             _userStore = userStore;
@@ -55,6 +58,7 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
             _emailSender = emailSender;
             _serviceProvider = serviceProvider;
             _environment = environment;
+            _s3Service = s3Service;
         }
 
         [BindProperty]
@@ -148,23 +152,30 @@ namespace WholesaleDistributionApp.Areas.Identity.Pages.Account
                     {
                         try
                         {
-                            var fileName = $"{user.Id}{Path.GetExtension(Input.ImageFile.FileName)}";
-                            var directoryPath = Path.Combine(_environment.WebRootPath, "images", "qr");
+                            // Ensure the folder path for S3 key
+                            var uniqueFileName = Guid.NewGuid().ToString() + "_" + Input.ImageFile.FileName;
+                            var s3Key = Path.Combine("qr", uniqueFileName).Replace("\\", "/");
 
-                            // Ensure the directory exists
-                            if (!Directory.Exists(directoryPath))
-                            {
-                                Directory.CreateDirectory(directoryPath);
-                            }
-
-                            var filePath = Path.Combine(directoryPath, fileName);
-
-                            using (var stream = new FileStream(filePath, FileMode.Create))
+                            // Save the file locally (temporary)
+                            var tempFilePath = Path.Combine(Path.GetTempPath(), uniqueFileName);
+                            using (var stream = new FileStream(tempFilePath, FileMode.Create))
                             {
                                 await Input.ImageFile.CopyToAsync(stream);
                             }
 
-                            imagePath = $"/images/qr/{fileName}";
+                            // Upload the file to S3
+                            await _s3Service.UploadFileAsync(s3Key, tempFilePath);
+
+                            // Get the URL
+                            var s3Url = _s3Service.GetFileUrl(s3Key);
+
+                            // Delete the temporary local file
+                            if (System.IO.File.Exists(tempFilePath))
+                            {
+                                System.IO.File.Delete(tempFilePath);
+                            }
+
+                            imagePath = s3Url;
                             _logger.LogInformation("Image path:" + imagePath);
                         }
                         catch (Exception ex)

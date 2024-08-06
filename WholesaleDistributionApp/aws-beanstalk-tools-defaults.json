@@ -9,7 +9,7 @@
     "enable-xray"    : false,
     "enhanced-health-type" : "basic",
     "additional-options"   : "\"aws:autoscaling:launchconfiguration,SecurityGroups\"=\"sg-02ced9d841ccf7a41\";\"aws:ec2:vpc,Subnets\"=\"subnet-03ec4b6594354bbad\"",
-    "solution-stack"       : "64bit Amazon Linux 2 v2.7.3 running .NET Core",
+    "solution-stack"       : "64bit Amazon Linux 2 v2.8.0 running .NET Core",
     "environment-type"     : "SingleInstance",
     "cname"                : "wholesaledistributionapp-dev",
     "instance-type"        : "t1.micro",

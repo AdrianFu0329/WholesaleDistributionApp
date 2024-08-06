@@ -1,9 +1,22 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using WholesaleDistributionApp.Services;
 using WholesaleDistributionApp.Data;
 using WholesaleDistributionApp.Areas.Identity.Data;
 using WholesaleDistributionApp.Models;
+using Amazon.S3;
+using Serilog;
+using Amazon.Extensions.NETCore.Setup;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
 var connectionString = builder.Configuration.GetConnectionString("WholesaleDistributionAppContextConnection") ?? throw new InvalidOperationException("Connection string 'WholesaleDistributionAppContextConnection' not found.");
 
 builder.Services.AddDbContext<WholesaleDistributionAppContext>(options => options.UseSqlServer(connectionString));
@@ -18,6 +31,10 @@ builder.Services.AddRazorPages();
 builder.Services.AddScoped<StockService>();
 builder.Services.AddScoped<FileService>();
 
+// AWS S3 Configuration
+builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());
+builder.Services.AddAWSService<IAmazonS3>();
+builder.Services.AddScoped<S3Service>();
 
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
@@ -26,6 +43,7 @@ builder.Services.AddLogging(logging =>
     logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
     logging.AddConsole(); // Add console logging provider
     logging.AddDebug();   // Add debug output logging provider
+    logging.AddAWSProvider(builder.Configuration.GetAWSLoggingConfigSection());
     // Add other logging providers as needed (e.g., file logging, event log, etc.)
 });
 

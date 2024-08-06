@@ -6,6 +6,7 @@ using System.Security.Claims;
 using WholesaleDistributionApp.Areas.Identity.Data;
 using WholesaleDistributionApp.Data;
 using WholesaleDistributionApp.Models;
+using WholesaleDistributionApp.Services;
 
 namespace WholesaleDistributionApp.Controllers
 {
@@ -14,11 +15,13 @@ namespace WholesaleDistributionApp.Controllers
         private readonly WholesaleDistributionAppContext _context;
         private readonly UserManager<WholesaleDistributionAppUser> _userManager;
         private readonly ILogger<RetailerController> _logger;
-        public RetailerController(WholesaleDistributionAppContext context, UserManager<WholesaleDistributionAppUser> userManager, ILogger<RetailerController> logger)
+        private readonly S3Service _s3Service;
+        public RetailerController(WholesaleDistributionAppContext context, UserManager<WholesaleDistributionAppUser> userManager, ILogger<RetailerController> logger, S3Service s3Service)
         {
             _context = context;
             _userManager = userManager;
             _logger = logger;
+            _s3Service = s3Service;
         }
         public IActionResult ViewProducts(string searchString)
         {
@@ -44,7 +47,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (string.IsNullOrEmpty(orderIdentifier))
             {
-                _logger.LogWarning("Order identifier is required but was not provided.");
+                _logger.LogError("Order identifier is required but was not provided.");
                 return Json(new { success = false, message = "Order identifier is required." });
             }
 
@@ -57,7 +60,7 @@ namespace WholesaleDistributionApp.Controllers
 
             if (orders == null || !orders.Any())
             {
-                _logger.LogWarning($"Order not found for orderIdentifier: {orderIdentifier}");
+                _logger.LogError($"Order not found for orderIdentifier: {orderIdentifier}");
                 return Json(new { success = false, message = "Order not found." });
             }
 
@@ -82,6 +85,7 @@ namespace WholesaleDistributionApp.Controllers
             // Check if order details are provided
             if (string.IsNullOrEmpty(orderDetails))
             {
+                _logger.LogError("No items selected for order.");
                 return Json(new { success = false, message = "No items selected for order." });
             }
 
@@ -89,6 +93,7 @@ namespace WholesaleDistributionApp.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
+                _logger.LogError("User is not authenticated.");
                 return Json(new { success = false, message = "User is not authenticated." });
             }
 
@@ -98,6 +103,7 @@ namespace WholesaleDistributionApp.Controllers
             // Validate order details
             if (orderDetailsList == null || orderDetailsList.Count == 0)
             {
+                _logger.LogError("No items selected for order.");
                 return Json(new { success = false, message = "No items selected for order." });
             }
 
@@ -105,6 +111,7 @@ namespace WholesaleDistributionApp.Controllers
             {
                 if (detail.Quantity <= 0)
                 {
+                    _logger.LogError("Quantity must be greater than 0.");
                     return Json(new { success = false, message = "Quantity must be greater than 0." });
                 }
             }
@@ -112,6 +119,7 @@ namespace WholesaleDistributionApp.Controllers
             // Check if proof of payment is provided
             if (proofOfPayment == null || proofOfPayment.Length == 0)
             {
+                _logger.LogError("Proof of payment is required.");
                 return Json(new { success = false, message = "Proof of payment is required." });
             }
 
@@ -120,35 +128,53 @@ namespace WholesaleDistributionApp.Controllers
             var fileExtension = Path.GetExtension(proofOfPayment.FileName).ToLowerInvariant();
             if (!allowedExtensions.Contains(fileExtension))
             {
+                _logger.LogError("Invalid file type. Only JPG, JPEG, PNG, and PDF files are allowed.");
                 return Json(new { success = false, message = "Invalid file type. Only JPG, JPEG, PNG, and PDF files are allowed." });
             }
 
             if (proofOfPayment.Length > 5 * 1024 * 1024) // 5MB size limit
             {
+                _logger.LogError("File size exceeds 5MB limit.");
                 return Json(new { success = false, message = "File size exceeds 5MB limit." });
             }
 
             try
             {
-                // Save proof of payment file to the server
                 var fileName = Path.GetFileName(proofOfPayment.FileName);
-                var directoryPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "proofOfPayments");
+                string filePath = null;
 
-                // Ensure the directory exists
-                if (!Directory.Exists(directoryPath))
+                if (proofOfPayment != null && proofOfPayment.Length > 0)
                 {
-                    Directory.CreateDirectory(directoryPath);
+                    _logger.LogInformation("Image file is not null, proceeding with upload.");
+
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + fileName;
+                    var s3Key = Path.Combine("proofOfPayment", uniqueFileName).Replace("\\", "/");
+
+                    var tempFilePath = Path.Combine(Path.GetTempPath(), uniqueFileName);
+                    using (var stream = new FileStream(tempFilePath, FileMode.Create))
+                    {
+                        await proofOfPayment.CopyToAsync(stream);
+                    }
+
+                    _logger.LogInformation($"Uploading file {tempFilePath} to S3 key {s3Key}");
+
+                    var uploadSuccess = await _s3Service.UploadFileAsync(s3Key, tempFilePath);
+                    if (uploadSuccess)
+                    {
+                        var s3Url = _s3Service.GetFileUrl(s3Key);
+                        filePath = s3Url;
+                        _logger.LogInformation($"File uploaded successfully to {filePath}");
+
+                        if (System.IO.File.Exists(tempFilePath))
+                        {
+                            System.IO.File.Delete(tempFilePath);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogError("Failed to upload file to S3.");
+                    }
                 }
-
-                var filePath = Path.Combine(directoryPath, fileName);
-
-                // Save new proof of payment
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await proofOfPayment.CopyToAsync(stream);
-                }
-
-                var imgDownloadURL = $"/proofOfPayments/{fileName}";
 
                 // Create new Order entity
                 var order = new Order
@@ -159,9 +185,13 @@ namespace WholesaleDistributionApp.Controllers
                     TotalAmount = orderDetailsList.Sum(od => od.Subtotal),
                     OrderStatus = "Pending",
                     OrderType = "Retailer",
-                    PaymentReceiptURL = imgDownloadURL,
                     StockDistributorId = "-"
                 };
+
+                if (filePath != null)
+                {
+                    order.PaymentReceiptURL = filePath;
+                }
 
                 // Save order to database
                 _context.Orders.Add(order);
@@ -180,6 +210,7 @@ namespace WholesaleDistributionApp.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
                 return Json(new { success = false, message = $"Failed to submit order: {ex.Message}" });
             }
         }
@@ -271,6 +302,7 @@ namespace WholesaleDistributionApp.Controllers
                 }
                 else
                 {
+                    _logger.LogError("Order not found.");
                     return Json(new { success = false, message = "Order not found." });
                 }
             }
@@ -307,6 +339,7 @@ namespace WholesaleDistributionApp.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
                 return Json(new { success = false, message = ex.Message });
             }
         }
