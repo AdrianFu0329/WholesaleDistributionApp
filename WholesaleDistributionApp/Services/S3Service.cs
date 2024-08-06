@@ -14,7 +14,7 @@ namespace WholesaleDistributionApp.Services
         private readonly IAmazonS3 _s3Client;
         private readonly ILogger<S3Service> _logger;
         private readonly string _bucketName;
-        private readonly string _imageFolderPath = "images/"; // Ensure this is correctly set
+        private readonly string _imageFolderPath = "images/";
 
         public S3Service(IConfiguration configuration, ILogger<S3Service> logger)
         {

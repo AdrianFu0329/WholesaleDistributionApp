@@ -5,8 +5,18 @@ using WholesaleDistributionApp.Data;
 using WholesaleDistributionApp.Areas.Identity.Data;
 using WholesaleDistributionApp.Models;
 using Amazon.S3;
+using Serilog;
+using Amazon.Extensions.NETCore.Setup;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
 var connectionString = builder.Configuration.GetConnectionString("WholesaleDistributionAppContextConnection") ?? throw new InvalidOperationException("Connection string 'WholesaleDistributionAppContextConnection' not found.");
 
 builder.Services.AddDbContext<WholesaleDistributionAppContext>(options => options.UseSqlServer(connectionString));

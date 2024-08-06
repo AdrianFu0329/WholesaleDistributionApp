@@ -317,8 +317,6 @@ namespace WholesaleDistributionApp.Controllers
                         userId = u.UserId,
                     })
                 };
-
-                _logger.LogError("View Users SUccessful");
                 return Json(responseData);
             }
             catch (Exception ex)
@@ -604,6 +602,7 @@ namespace WholesaleDistributionApp.Controllers
                 }
                 else
                 {
+                    _logger.LogError("Failed to delete user.");
                     return Json(new { success = false, message = "Failed to delete user." });
                 }
             }
